@@ -1,6 +1,8 @@
 package server
 
 import (
+	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -32,6 +34,42 @@ import (
 )
 
 // CORS helpers configured via environment variables
+
+// maxBodyBytes is the global request body size limit (4 MB).
+const maxBodyBytes = 4 << 20 // 4 MB
+
+// bodySizeMiddleware caps incoming request body size to prevent DoS via huge payloads.
+func bodySizeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// healthHandler pings the DB and returns 200 OK or 503 Service Unavailable.
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	db := util.GetDB()
+	sqlDB, err := db.DB()
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(map[string]string{"status": "unhealthy", "reason": err.Error()})
+		return
+	}
+	if err := sqlDB.Ping(); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(map[string]string{"status": "unhealthy", "reason": err.Error()})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// silence unused import if DB() isn't used elsewhere in the file
+var _ = sql.ErrNoRows
+
 
 func getListEnv(key, def string) []string { // default empty - allows any string, splits on comma
 	val := strings.TrimSpace(os.Getenv(key))
@@ -75,7 +113,7 @@ func buildCORSFromEnv() *cors.Cors {
 	if !getBoolEnv("CORS_ENABLED", true) {
 		return nil
 	}
-	origins := getListEnv("CORS_ALLOW_ORIGINS", "*")
+	origins := getListEnv("CORS_ALLOW_ORIGINS", "")
 	methods := getListEnv("CORS_ALLOW_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 	headers := getListEnv("CORS_ALLOW_HEADERS", "Content-Type,Authorization")
 	expose := getListEnv("CORS_EXPOSE_HEADERS", "")
@@ -109,8 +147,15 @@ func Start() {
 	securityMiddleware := securityService.SecurityMiddleware()
 	loginSecurityMiddleware := securityService.LoginSecurityMiddleware()
 
+	// Health check — no auth, no rate limit, always first
+	router.HandleFunc("/v0/health", healthHandler).Methods("GET")
+
 	router.HandleFunc("/v0/home", handlers.HomeHandler).Methods("GET")
 	router.Handle("/v0/login", loginSecurityMiddleware(http.HandlerFunc(middleware.LoginHandler))).Methods("POST")
+	
+	// Public Registration
+	router.Handle("/v0/register/initiate", loginSecurityMiddleware(http.HandlerFunc(usershandlers.InitiateRegistrationHandler))).Methods("POST")
+	router.Handle("/v0/register/verify", loginSecurityMiddleware(http.HandlerFunc(usershandlers.VerifyRegistrationHandler))).Methods("POST")
 
 	// application setup and stats information
 	router.Handle("/v0/setup", securityMiddleware(http.HandlerFunc(setuphandlers.GetSetupHandler(setup.LoadEconomicsConfig)))).Methods("GET")
@@ -139,6 +184,7 @@ func Start() {
 	router.Handle("/v0/usercredit/{username}", securityMiddleware(http.HandlerFunc(usercredit.GetUserCreditHandler))).Methods("GET")
 	router.Handle("/v0/portfolio/{username}", securityMiddleware(http.HandlerFunc(publicuser.GetPortfolio))).Methods("GET")
 	router.Handle("/v0/users/{username}/financial", securityMiddleware(http.HandlerFunc(usershandlers.GetUserFinancialHandler))).Methods("GET")
+	router.Handle("/v0/users/daily-login", securityMiddleware(http.HandlerFunc(usershandlers.DailyLoginStreakHandler))).Methods("POST")
 
 	// handle private user stuff, display sensitive profile information to customize
 	router.Handle("/v0/privateprofile", securityMiddleware(http.HandlerFunc(privateuser.GetPrivateProfileUserResponse))).Methods("GET")
@@ -170,8 +216,9 @@ func Start() {
 	router.HandleFunc("/v0/content/home", homepageHandler.PublicGet).Methods("GET")
 	router.Handle("/v0/admin/content/home", securityMiddleware(http.HandlerFunc(homepageHandler.AdminUpdate))).Methods("PUT")
 
+	// Apply body size limit (outermost layer — before CORS and routing)
 	// Apply CORS middleware if enabled
-	handler := http.Handler(router)
+	handler := bodySizeMiddleware(http.Handler(router))
 	if c != nil {
 		handler = c.Handler(handler)
 	}

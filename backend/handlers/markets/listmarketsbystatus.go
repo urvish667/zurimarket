@@ -36,8 +36,15 @@ func ListMarketsByStatusHandler(filterFunc MarketFilterFunc, statusName string) 
 			return
 		}
 
+		limit := 100 // Default limit
+		if lStr := r.URL.Query().Get("limit"); lStr != "" {
+			if l, err := strconv.Atoi(lStr); err == nil && l > 0 {
+				limit = l
+			}
+		}
+
 		db := util.GetDB()
-		markets, err := ListMarketsByStatus(db, filterFunc)
+		markets, err := ListMarketsByStatus(db, filterFunc, limit)
 		if err != nil {
 			log.Printf("Error fetching markets for status %s: %v", statusName, err)
 			http.Error(w, "Error fetching markets", http.StatusInternalServerError)
@@ -47,10 +54,18 @@ func ListMarketsByStatusHandler(filterFunc MarketFilterFunc, statusName string) 
 		var marketOverviews []MarketOverview
 		for _, market := range markets {
 			bets := tradingdata.GetBetsForMarket(db, uint(market.ID))
-			probabilityChanges := wpam.CalculateMarketProbabilitiesWPAM(market.CreatedAt, bets)
+			
+			// Handle case with no bets for probability calculation
+			lastProbability := 0.5 // Default
+			if len(bets) > 0 {
+				probabilityChanges := wpam.CalculateMarketProbabilitiesWPAM(market.CreatedAt, bets)
+				if len(probabilityChanges) > 0 {
+					lastProbability = probabilityChanges[len(probabilityChanges)-1].Probability
+				}
+			}
+
 			numUsers := models.GetNumMarketUsers(bets)
 			marketVolume := marketmath.GetMarketVolume(bets)
-			lastProbability := probabilityChanges[len(probabilityChanges)-1].Probability
 
 			creatorInfo := publicuser.GetPublicUserInfo(db, market.CreatorUsername)
 
@@ -87,10 +102,10 @@ func ListMarketsByStatusHandler(filterFunc MarketFilterFunc, statusName string) 
 	}
 }
 
-// ListMarketsByStatus fetches markets from the database using the provided filter function
-func ListMarketsByStatus(db *gorm.DB, filterFunc MarketFilterFunc) ([]models.Market, error) {
+// ListMarketsByStatus fetches markets from the database using the provided filter function and limit
+func ListMarketsByStatus(db *gorm.DB, filterFunc MarketFilterFunc, limit int) ([]models.Market, error) {
 	var markets []models.Market
-	query := filterFunc(db).Order("created_at DESC").Limit(100) // Set a reasonable limit and order by most recent
+	query := filterFunc(db).Order("created_at DESC").Limit(limit)
 	result := query.Find(&markets)
 	if result.Error != nil {
 		log.Printf("Error fetching filtered markets: %v", result.Error)

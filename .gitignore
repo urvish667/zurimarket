@@ -27,6 +27,9 @@ go.work
 # Env File
 .env
 .env-e
+.env.dev
+backend/.env.dev
+backend/.env.prod
 
 # Data files
 **/data/certbot

@@ -2,6 +2,7 @@ package statshandlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"socialpredict/models"
 	"socialpredict/setup"
@@ -36,8 +37,14 @@ type SetupConfiguration struct {
 	SellSharesFee              int64   `json:"sellSharesFee"`
 }
 
+type PlatformStats struct {
+	TotalUsers   int64 `json:"totalUsers"`
+	TotalMarkets int64 `json:"totalMarkets"`
+}
+
 type StatsResponse struct {
 	FinancialStats     FinancialStats     `json:"financialStats"`
+	PlatformStats      PlatformStats      `json:"platformStats"`
 	SetupConfiguration SetupConfiguration `json:"setupConfiguration"`
 }
 
@@ -61,8 +68,15 @@ func StatsHandler() http.HandlerFunc {
 			return
 		}
 
+		platformStats, err := calculatePlatformStats(db)
+		if err != nil {
+			log.Printf("Failed to calculate platform stats: %v", err)
+			// Non-critical, just use 0
+		}
+
 		response := StatsResponse{
 			FinancialStats:     financialStats,
+			PlatformStats:      platformStats,
 			SetupConfiguration: setupConfig,
 		}
 
@@ -139,4 +153,20 @@ func loadSetupConfiguration() (SetupConfiguration, error) {
 	result.SellSharesFee = economicConfig.Economics.Betting.BetFees.SellSharesFee
 
 	return result, nil
+}
+
+func calculatePlatformStats(db *gorm.DB) (PlatformStats, error) {
+	var stats PlatformStats
+
+	// Count users
+	if err := db.Model(&models.User{}).Where("user_type = ?", "REGULAR").Count(&stats.TotalUsers).Error; err != nil {
+		return stats, err
+	}
+
+	// Count active markets
+	if err := db.Model(&models.Market{}).Where("status = ?", "active").Count(&stats.TotalMarkets).Error; err != nil {
+		return stats, err
+	}
+
+	return stats, nil
 }

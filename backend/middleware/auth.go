@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"socialpredict/models"
+	"socialpredict/util"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -11,9 +12,12 @@ import (
 
 func Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Here you would verify the JWT token or session
-		// If it's valid, call next.ServeHTTP to pass to the next handler
-		// Otherwise, return an error
+		db := util.GetDB()
+		if _, httpErr := ValidateTokenAndGetUser(r, db); httpErr != nil {
+			http.Error(w, httpErr.Message, httpErr.StatusCode)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }
 

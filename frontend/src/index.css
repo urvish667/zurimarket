@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+    font-family: 'Satoshi';
+    src: url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap');
+}
+
+.glass-panel {
+    background: rgba(33, 39, 37, 0.7);
+    backdrop-filter: blur(24px);
+}
+
+.primary-gradient {
+    background: linear-gradient(135deg, #ddff5c 0%, #caf300 100%);
+}
+
 body {
   @apply bg-primary-background;
   margin: 0;
@@ -64,5 +78,11 @@ code {
   /* Optional smallest device tweaks (<=390px) */
   @media (max-width: 390px) {
     .sp-tight { letter-spacing: 0; }
+  }
+}
+
+@layer utilities {
+  .font-headline {
+    font-family: 'Space Grotesk', sans-serif !important;
   }
 }

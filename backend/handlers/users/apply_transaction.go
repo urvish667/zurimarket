@@ -15,26 +15,29 @@ const (
 	TransactionFee    = "FEE"
 )
 
-// ApplyTransactionToUser credits the user's balance for a specific transaction type (WIN, REFUND, etc.)
+// ApplyTransactionToUser atomically adjusts the user's balance for a given transaction type.
+// It accepts either a real *gorm.DB or an in-progress transaction (*gorm.DB from db.Transaction),
+// making it safe to call from within a wrapping transaction.
 func ApplyTransactionToUser(username string, amount int64, db *gorm.DB, transactionType string) error {
-	var user models.User
-
-	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
-		return fmt.Errorf("user lookup failed: %w", err)
-	}
-
+	var delta int64
 	switch transactionType {
 	case TransactionWin, TransactionRefund, TransactionSale:
-		user.AccountBalance += amount
+		delta = amount
 	case TransactionBuy, TransactionFee:
-		user.AccountBalance -= amount
+		delta = -amount
 	default:
 		return fmt.Errorf("unknown transaction type: %s", transactionType)
 	}
 
-	if err := db.Save(&user).Error; err != nil {
-		return fmt.Errorf("failed to update user balance: %w", err)
-	}
+	result := db.Model(&models.User{}).
+		Where("username = ?", username).
+		UpdateColumn("account_balance", gorm.Expr("account_balance + ?", delta))
 
+	if result.Error != nil {
+		return fmt.Errorf("failed to update user balance: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("user not found: %s", username)
+	}
 	return nil
 }

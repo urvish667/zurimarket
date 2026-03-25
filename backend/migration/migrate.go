@@ -103,6 +103,11 @@ func MigrateDB(db *gorm.DB) error {
 		return err
 	}
 
+	// Always ensure core models are in sync even if migrations ran
+	if err := db.AutoMigrate(&models.User{}); err != nil {
+		return fmt.Errorf("failed to auto-migrate User after migrations: %w", err)
+	}
+
 	log.Printf("migration - MigrateDB: database migrations completed")
 	return nil
 }

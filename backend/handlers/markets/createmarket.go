@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"socialpredict/logging"
 	"socialpredict/middleware"
 	"socialpredict/models"
 	"socialpredict/security"
@@ -15,6 +14,8 @@ import (
 	"socialpredict/util"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 const maxQuestionTitleLength = 160
@@ -155,33 +156,36 @@ func CreateMarketHandler(loadEconConfig setup.EconConfigLoader) func(http.Respon
 			return
 		}
 
-		// Subtract any Market Creation Fees from Creator, up to maximum debt
 		marketCreateFee := appConfig.Economics.MarketIncentives.CreateMarketCost
 		maximumDebtAllowed := appConfig.Economics.User.MaximumDebtAllowed
 
-		// Maximum debt allowed check
+		// Pre-flight check (fast rejection before touching the DB)
 		if user.AccountBalance-marketCreateFee < -maximumDebtAllowed {
 			http.Error(w, "Insufficient balance", http.StatusBadRequest)
 			return
 		}
 
-		// deduct fee
-		logging.LogAnyType(user.AccountBalance, "user.AccountBalance before")
-		// Deduct the bet and switching sides fee amount from the user's balance
-		user.AccountBalance -= marketCreateFee
-		logging.LogAnyType(user.AccountBalance, "user.AccountBalance after")
-
-		// Update the user's balance in the database
-		if err := db.Save(&user).Error; err != nil {
-			http.Error(w, "Error updating user balance: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// Create the market in the database
-		result := db.Create(&newMarket)
-		if result.Error != nil {
-			log.Printf("Error creating new market: %v", result.Error)
-			http.Error(w, "Error creating new market", http.StatusInternalServerError)
+		// Atomically deduct the fee and create the market in a single transaction.
+		// The WHERE guard ensures that even under concurrent requests the balance
+		// cannot go below -maximumDebtAllowed.
+		txErr := db.Transaction(func(tx *gorm.DB) error {
+			res := tx.Model(&models.User{}).
+				Where("username = ? AND account_balance - ? >= ?", user.Username, marketCreateFee, -maximumDebtAllowed).
+				UpdateColumn("account_balance", gorm.Expr("account_balance - ?", marketCreateFee))
+			if res.Error != nil {
+				return res.Error
+			}
+			if res.RowsAffected == 0 {
+				return fmt.Errorf("insufficient balance")
+			}
+			if err := tx.Create(&newMarket).Error; err != nil {
+				log.Printf("Error creating new market: %v", err)
+				return fmt.Errorf("error creating new market")
+			}
+			return nil
+		})
+		if txErr != nil {
+			http.Error(w, txErr.Error(), http.StatusBadRequest)
 			return
 		}
 

@@ -70,16 +70,19 @@ func ProcessSellRequest(db *gorm.DB, redeemRequest *models.Bet, user *models.Use
 		return err
 	}
 
-	if err := usershandlers.ApplyTransactionToUser(user.Username, actualSaleValue, db, usershandlers.TransactionSale); err != nil {
-		return err
-	}
-
-	if err := db.Create(&bet).Error; err != nil {
-		return err
-	}
-
-	return nil
+	// Wrap the two DB writes in a single transaction:
+	// credit the user's balance AND record the sale bet atomically.
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := usershandlers.ApplyTransactionToUser(user.Username, actualSaleValue, tx, usershandlers.TransactionSale); err != nil {
+			return err
+		}
+		if err := tx.Create(&bet).Error; err != nil {
+			return fmt.Errorf("failed to record sale bet: %w", err)
+		}
+		return nil
+	})
 }
+
 
 func getUserNetPositionForMarket(db *gorm.DB, marketIDStr string, username string) (positionsmath.UserMarketPosition, error) {
 	userNetPosition, err := positionsmath.CalculateMarketPositionForUser_WPAM_DBPM(db, marketIDStr, username)

@@ -143,3 +143,45 @@ func TestPlaceBetCore_BalanceAdjustment(t *testing.T) {
 		t.Errorf("Expected bet username 'testuser', got %s", bet.Username)
 	}
 }
+
+// TestPlaceBetCore_InsufficientBalance_Atomic verifies the atomic WHERE guard in the DB transaction.
+// Even if the in-memory balance looks sufficient (stale read), the DB-level guard must reject
+// a bet that would breach the maximum debt limit.
+func TestPlaceBetCore_InsufficientBalance_Atomic(t *testing.T) {
+	db := modelstesting.NewFakeDB(t)
+
+	cfg := modelstesting.GenerateEconomicConfig()
+	maxDebt := cfg.Economics.User.MaximumDebtAllowed // 500
+	betAmount := int64(100)
+	fee := cfg.Economics.Betting.BetFees.InitialBetFee // 1
+
+	// User is already at exactly the debt limit: balance == -maxDebt
+	startingBalance := -maxDebt
+	user := modelstesting.GenerateUser("atLimitUser", startingBalance)
+	market := modelstesting.GenerateMarket(2, "atLimitUser")
+	db.Create(&user)
+	db.Create(&market)
+
+	betRequest := models.Bet{
+		MarketID: 2,
+		Amount:   betAmount,
+		Outcome:  "YES",
+	}
+
+	// Simulate a stale in-memory user with a higher balance so pre-flight passes
+	staleUser := user
+	staleUser.AccountBalance = betAmount + fee // enough to fool the pre-flight check
+
+	_, err := PlaceBetCore(&staleUser, betRequest, db, func() *setup.EconomicConfig { return cfg })
+	if err == nil {
+		t.Fatal("expected error from atomic DB guard when user is at debt limit, got nil")
+	}
+
+	// Confirm DB balance was NOT changed
+	var dbUser models.User
+	db.First(&dbUser, "username = ?", user.Username)
+	if dbUser.AccountBalance != startingBalance {
+		t.Errorf("expected DB balance unchanged at %d, got %d", startingBalance, dbUser.AccountBalance)
+	}
+}
+

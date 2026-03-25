@@ -52,3 +52,14 @@ func TestApplyTransactionToUser(t *testing.T) {
 		}
 	}
 }
+
+func TestApplyTransactionToUser_UserNotFound(t *testing.T) {
+	db := modelstesting.NewFakeDB(t)
+	// Do NOT insert any user — username does not exist in the DB
+
+	err := ApplyTransactionToUser("ghost_user", 50, db, TransactionWin)
+	if err == nil {
+		t.Fatal("expected error for non-existent user, got nil")
+	}
+}
+

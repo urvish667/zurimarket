@@ -1,7 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
-import { AuthProvider } from './helpers/AuthContent';
+import { AuthProvider, useAuth } from './helpers/AuthContent';
 import Footer from './components/footer/Footer';
 import AppRoutes from './helpers/AppRoutes';
 import '../index.css';
@@ -25,6 +25,34 @@ function ErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
+function AppLayout() {
+  const auth = useAuth();
+  const location = useLocation();
+  const isLoggedIn = !!auth.username;
+  const isLandingPage = location.pathname === '/' && !isLoggedIn;
+  const isAuthPage = ['/login', '/register', '/admin/login'].includes(location.pathname);
+
+  if (isLandingPage || isAuthPage) {
+    return (
+      <div className='App bg-background min-h-screen text-on-background'>
+        <AppRoutes />
+      </div>
+    );
+  }
+
+  // Standard logged-in or global layout
+  return (
+    <div className='App bg-primary-background min-h-screen text-white flex flex-col md:flex-row'>
+      <Sidebar />
+      <div className='flex flex-col flex-grow w-full'>
+        <main className='flex-grow p-4 sm:p-6 overflow-y-auto w-full'>
+          <AppRoutes />
+        </main>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary
@@ -35,14 +63,7 @@ function App() {
     >
       <AuthProvider>
         <Router>
-          <div className='App bg-primary-background min-h-screen text-white flex flex-col md:flex-row'>
-            <Sidebar />
-            <div className='flex flex-col flex-grow'>
-              <main className='flex-grow p-4 sm:p-6 overflow-y-auto'>
-                <AppRoutes />
-              </main>
-            </div>
-          </div>
+          <AppLayout />
         </Router>
       </AuthProvider>
     </ErrorBoundary>

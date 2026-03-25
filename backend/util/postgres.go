@@ -42,15 +42,23 @@ func InitDB() {
 	}
 
 	dbPort := os.Getenv("POSTGRES_PORT")
-  if dbPort == "" {
+	if dbPort == "" {
 		dbPort = os.Getenv("DB_PORT")
 	}
 	if dbPort == "" {
 		dbPort = "5432"
 	}
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
-		dbHost, dbUser, dbPassword, dbName, dbPort)
+	dbSSLMode := os.Getenv("POSTGRES_SSLMODE")
+	if dbSSLMode == "" {
+		dbSSLMode = os.Getenv("DB_SSLMODE")
+	}
+	if dbSSLMode == "" {
+		dbSSLMode = "require"
+	}
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=UTC",
+		dbHost, dbUser, dbPassword, dbName, dbPort, dbSSLMode)
 
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

@@ -10,11 +10,15 @@ import Create from '../pages/create/Create';
 import About from '../pages/about/About';
 import Stats from '../pages/stats/Stats';
 import Home from '../pages/home/Home';
+import LandingPage from '../pages/home/LandingPage';
 import MarketDetails from '../pages/marketDetails/MarketDetails';
 import User from '../pages/user/User';
 import Style from '../pages/style/Style';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import NotFound from '../pages/notfound/NotFound';
+import LoginForm from '../pages/auth/LoginForm';
+import AdminLoginForm from '../pages/auth/AdminLoginForm';
+import SignupFlow from '../pages/auth/SignupFlow';
 
 const AppRoutes = () => {
   const auth = useAuth();
@@ -113,12 +117,25 @@ const AppRoutes = () => {
         )}
       </Route>
 
+      {/* Auth Routes */}
+      <Route exact path='/login'>
+        {isLoggedIn ? <Redirect to='/' /> : <LoginForm />}
+      </Route>
+      <Route exact path='/admin/login'>
+        {isLoggedIn && auth.usertype === 'ADMIN' ? <Redirect to='/admin' /> : <AdminLoginForm />}
+      </Route>
+      <Route exact path='/register'>
+        {isLoggedIn ? <Redirect to='/' /> : <SignupFlow />}
+      </Route>
+
       {/* Home Route */}
       <Route exact path='/'>
         {isLoggedIn && mustChangePassword ? (
           <Redirect to='/changepassword' />
-        ) : (
+        ) : isLoggedIn ? (
           <Home />
+        ) : (
+          <LandingPage />
         )}
       </Route>
 
@@ -131,3 +148,4 @@ const AppRoutes = () => {
 };
 
 export default AppRoutes;
+
