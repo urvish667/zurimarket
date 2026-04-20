@@ -3,6 +3,7 @@ import { useHistory, Link } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import { useAuth } from '../../helpers/AuthContent';
 import { API_URL } from '../../config';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 const SignupFlow = () => {
     const [step, setStep] = useState(1);
@@ -35,6 +36,18 @@ const SignupFlow = () => {
         if (!digits) return 'your mobile number';
         const hiddenDigits = '\u2022'.repeat(Math.max(digits.length - 2, 2));
         return `+21 ${hiddenDigits}${digits.slice(-2)}`;
+    };
+
+    const calculateAge = (dobString) => {
+        if (!dobString) return 0;
+        const today = new Date();
+        const birthDate = new Date(dobString);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
     };
 
     const handleOtpDigitChange = (index, value) => {
@@ -138,6 +151,12 @@ const SignupFlow = () => {
         e.preventDefault();
         setError('');
         setLoading(true);
+
+        if (calculateAge(formData.dateOfBirth) < 18) {
+            setError("PROTOCOL RESTRICTION: You must be at least 18 years old to join.");
+            setLoading(false);
+            return;
+        }
 
         try {
             await initiateRegistration();
@@ -352,10 +371,13 @@ const SignupFlow = () => {
                 </p>
             </div>
 
-            <div className="p-6 bg-[#0b0f0e] rounded-sm border border-white/5 relative overflow-hidden group">
+            <div className="p-6 bg-[#0b0f0e] rounded-sm border border-white/5 relative overflow-hidden group text-center">
                 <div className="absolute top-0 left-0 w-full h-1 bg-[#ddff5c]/40"></div>
                 <h3 className="font-body text-[10px] uppercase tracking-[0.3em] text-[#a8acaa] mb-2 font-black">Initial Capital</h3>
-                <p className="font-headline text-4xl font-black text-[#ddff5c] tracking-tighter">R250</p>
+                <p className="font-headline text-4xl font-black text-[#ddff5c] tracking-tighter flex items-center justify-center">
+                    <CoinIcon size="text-3xl" />
+                    {formatCurrency(25000)}
+                </p>
                 <div className="mt-4 inline-flex items-center gap-1.5 text-[8px] font-black text-[#ddff5c] uppercase tracking-widest bg-[#ddff5c]/5 px-2 py-1 rounded">
                     <span className="w-1 h-1 rounded-full bg-[#ddff5c] animate-ping"></span>
                     Instantly Credited

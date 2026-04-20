@@ -45,6 +45,12 @@ func InitiateRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Age validation (18+)
+	if util.CalculateAge(req.DateOfBirth) < 18 {
+		http.Error(w, "Protocol restriction: You must be at least 18 years old to join ZuriMarket.", http.StatusBadRequest)
+		return
+	}
+
 	sanitizedUsername, err := securityService.Sanitizer.SanitizeUsername(req.Username)
 	if err != nil {
 		http.Error(w, "Invalid username format", http.StatusBadRequest)

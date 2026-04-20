@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import formatResolutionDate from '../../helpers/formatResolutionDate';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 const CATEGORY_COLORS = {
     politics: { bg: 'bg-blue-500/10', text: 'text-blue-400', icon: 'account_balance' },
@@ -77,9 +78,9 @@ const ZuriMarketCard = ({ marketData }) => {
                         {category}
                     </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-widest text-white/30 uppercase">
-                    <span className="material-symbols-outlined text-[12px]">bar_chart</span>
-                    R{totalVolume.toLocaleString()} Vol
+                <div className="flex items-center gap-1 text-[9px] font-bold tracking-widest text-white/30 uppercase">
+                    <CoinIcon size="text-[12px]" className="text-white/20" />
+                    {formatCurrency(totalVolume)} Vol
                 </div>
             </div>
 
@@ -106,14 +107,19 @@ const ZuriMarketCard = ({ marketData }) => {
             <div className="px-3 pb-3">
                 {isMultipleChoice ? (
                     <div className="flex bg-[#191a1a] p-1.5 rounded-sm justify-between items-center px-3 border border-[#ffffff05]">
-                        <span className="text-xs font-bold text-[#adaaaa] truncate max-w-[60%]">
-                            {market.options?.[0]?.label || 'Leading Option'}
-                        </span>
-                        <CircularProgress 
-                            percentage={market.options ? Math.round(100 / market.options.length) : 33} 
-                            color="#ddff5c" 
-                            size={28} 
-                            strokeWidth={2.5} 
+                        <div className="min-w-0">
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-[#ddff5c]/70">
+                                Multiple Outcomes
+                            </div>
+                            <span className="text-xs font-bold text-[#adaaaa] truncate block max-w-[60%]">
+                                Open market with {market.options?.length || '3+'} choices
+                            </span>
+                        </div>
+                        <CircularProgress
+                            percentage={100}
+                            color="#ddff5c"
+                            size={28}
+                            strokeWidth={2.5}
                         />
                     </div>
                 ) : (

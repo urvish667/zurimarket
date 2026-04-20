@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MarketProjectionLayout from '../marketprojection/MarketProjectionLayout';
 import { submitBet } from './TradeUtils';
 import { useMarketLabels } from '../../../hooks/useMarketLabels';
+import { CoinIcon, formatCurrency } from '../../../utils/CurrencyUtils';
 
 const BuySharesLayout = ({ marketId, market, token, onTransactionSuccess }) => {
     const [betAmount, setBetAmount] = useState(1);
@@ -98,7 +99,9 @@ const BuySharesLayout = ({ marketId, market, token, onTransactionSuccess }) => {
             <div className="flex items-center gap-6 mb-8">
                 <h2 className="text-sm font-black uppercase tracking-widest text-white/40">Amount</h2>
                 <div className="relative flex-1">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-sm font-black">🪙</span>
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
+                        <CoinIcon size="text-sm" />
+                    </div>
                     <input 
                         type="number" 
                         value={betAmount} 
@@ -134,15 +137,21 @@ const BuySharesLayout = ({ marketId, market, token, onTransactionSuccess }) => {
                     ) : (
                         <div className="space-y-1">
                             {feeData.InitialBetFee > 0 && (
-                                <p className="text-[10px] uppercase font-black tracking-widest text-white/40 flex justify-between">
+                                <p className="text-[10px] uppercase font-black tracking-widest text-white/40 flex justify-between items-center">
                                     <span>Initial Trade Fee:</span>
-                                    <span className="text-white">🪙 {feeData.InitialBetFee}</span>
+                                    <span className="text-white flex items-center gap-1">
+                                        <CoinIcon size="text-[10px]" />
+                                        {formatCurrency(feeData.InitialBetFee)}
+                                    </span>
                                 </p>
                             )}
                             {feeData.BuySharesFee > 0 && (
-                                <p className="text-[10px] uppercase font-black tracking-widest text-white/40 flex justify-between">
+                                <p className="text-[10px] uppercase font-black tracking-widest text-white/40 flex justify-between items-center">
                                     <span>Trading Fee:</span>
-                                    <span className="text-white">🪙 {feeData.BuySharesFee}</span>
+                                    <span className="text-white flex items-center gap-1">
+                                        <CoinIcon size="text-[10px]" />
+                                        {formatCurrency(feeData.BuySharesFee)}
+                                    </span>
                                 </p>
                             )}
                         </div>
@@ -152,11 +161,19 @@ const BuySharesLayout = ({ marketId, market, token, onTransactionSuccess }) => {
 
             <div className="border-t border-white/10 my-6"></div>
             
-            <MarketProjectionLayout
-                marketId={marketId}
-                amount={betAmount}
-                direction={selectedOutcome}
-            />
+            {!isMultipleChoice ? (
+                <MarketProjectionLayout
+                    marketId={marketId}
+                    amount={betAmount}
+                    direction={selectedOutcome}
+                />
+            ) : (
+                <div className="bg-white/5 p-4 border border-white/10">
+                    <p className="text-[10px] uppercase font-black tracking-widest text-white/40">
+                        Projection preview is currently available for binary markets only.
+                    </p>
+                </div>
+            )}
         </div>
     );
 };

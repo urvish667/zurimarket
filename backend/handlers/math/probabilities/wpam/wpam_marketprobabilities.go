@@ -48,7 +48,12 @@ func CalculateMarketProbabilitiesWPAM(marketCreatedAtTime time.Time, bets []mode
 			totalNo += bet.Amount
 		}
 
-		newProbability := (P_initial*float64(I_initial) + float64(totalYes)) / (float64(I_initial) + float64(totalYes) + float64(totalNo))
+		newProbability, _ := CalculateBinaryProbabilities(
+			P_initial,
+			float64(I_initial),
+			float64(totalYes),
+			float64(totalNo),
+		)
 		probabilityChanges = append(probabilityChanges, ProbabilityChange{Probability: newProbability, Timestamp: bet.PlacedAt})
 	}
 

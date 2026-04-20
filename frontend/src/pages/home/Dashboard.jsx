@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../../helpers/AuthContent';
 import { useHistory } from 'react-router-dom';
 import MarketGrid from '../../components/markets/MarketGrid';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 const Dashboard = () => {
     const { username } = useAuth();
@@ -44,7 +45,10 @@ const Dashboard = () => {
                 <div className="lg:col-span-4 grid grid-cols-1 gap-4">
                     <div className="bg-white/[0.03] border border-white/5 p-6 rounded-none group hover:border-[#ddff5c]/30 transition-all">
                         <span className="text-[10px] font-black uppercase tracking-widest text-white/30 group-hover:text-[#ddff5c]/60">Portfolio Value</span>
-                        <p className="text-2xl font-headline font-black text-white mt-1 uppercase tracking-tighter">R12,450.00</p>
+                        <p className="text-2xl font-headline font-black text-white mt-1 uppercase tracking-tighter flex items-center">
+                            <CoinIcon size="text-xl" />
+                            {formatCurrency(1245000)}
+                        </p>
                     </div>
                     <div className="bg-white/[0.03] border border-white/5 p-6 rounded-none group hover:border-[#ddff5c]/30 transition-all">
                         <span className="text-[10px] font-black uppercase tracking-widest text-white/30 group-hover:text-[#ddff5c]/60">Active Rewards</span>

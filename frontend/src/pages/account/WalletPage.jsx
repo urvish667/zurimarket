@@ -2,6 +2,7 @@ import React from 'react';
 import AccountSectionLayout from '../../components/layouts/profile/AccountSectionLayout';
 import useUserData from '../../hooks/useUserData';
 import { useAuth } from '../../helpers/AuthContent';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 const WalletPage = () => {
     const { username } = useAuth();
@@ -39,7 +40,10 @@ const WalletPage = () => {
                         </div>
                         <div>
                             <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">Current Balance</p>
-                            <h2 className="text-3xl font-black text-[#ddff5c] tracking-tighter uppercase">R {balance.toLocaleString()}</h2>
+                            <h2 className="text-3xl font-black text-[#ddff5c] tracking-tighter uppercase flex items-center">
+                                <CoinIcon size="text-2xl" />
+                                {formatCurrency(balance)}
+                            </h2>
                         </div>
                     </div>
                     <button className="w-full md:w-auto px-10 py-4 bg-[#ddff5c] text-[#0b0f0e] text-[10px] font-black uppercase tracking-[0.2em] rounded-none hover:brightness-110 transition-all shadow-[0_0_20px_rgba(221,255,92,0.15)]">
@@ -54,7 +58,10 @@ const WalletPage = () => {
                 <div className="bg-[#0e0e0e]/50 border border-white/5 p-6 flex justify-between items-center">
                     <div>
                         <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Amount Unutilised</p>
-                        <p className="text-sm font-black text-white uppercase tracking-wider">R {unutilised.toLocaleString()}</p>
+                        <p className="text-sm font-black text-white uppercase tracking-wider flex items-center">
+                            <CoinIcon size="text-sm" className="text-white/60" />
+                            {formatCurrency(unutilised)}
+                        </p>
                     </div>
                     <span className="material-symbols-outlined text-white/10">info</span>
                 </div>
@@ -63,7 +70,10 @@ const WalletPage = () => {
                 <div className="bg-[#0e0e0e]/50 border border-white/5 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="w-full md:w-auto">
                         <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Winnings</p>
-                        <p className="text-sm font-black text-white uppercase tracking-wider">R {winnings.toLocaleString()}</p>
+                        <p className="text-sm font-black text-white uppercase tracking-wider flex items-center">
+                            <CoinIcon size="text-sm" className="text-white/60" />
+                            {formatCurrency(winnings)}
+                        </p>
                     </div>
                     <button className="w-full md:w-auto px-6 py-2.5 border border-white/20 text-[9px] font-black text-white/60 uppercase tracking-[0.2em] hover:bg-white/5 hover:text-white transition-all">
                         Verify to Withdraw

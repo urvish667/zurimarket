@@ -4,6 +4,7 @@ import { useAuth } from '../../helpers/AuthContent';
 import useUserData from '../../hooks/useUserData';
 import useUserCredit from '../utils/userFinanceTools/FetchUserCredit';
 import { NotificationsSVG, ProfileSVG, CreateSVG } from '../../assets/components/SvgIcons';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 const TopNavbar = () => {
     const { username, logout } = useAuth();
@@ -71,9 +72,10 @@ const TopNavbar = () => {
                             {/* Wallet Display */}
                             <Link 
                                 to="/account/wallet"
-                                className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/5 hover:border-[#ddff5c]/30 transition-all cursor-pointer group"
+                                className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/5 hover:border-[#ddff5c]/30 transition-all cursor-pointer group"
                             >
-                                <span className="text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-[#ddff5c] transition-colors">R{userCredit !== null ? userCredit : '...'}</span>
+                                <CoinIcon size="text-[10px]" className="text-white/30 group-hover:text-[#ddff5c]" />
+                                <span className="text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-[#ddff5c] transition-colors">{userCredit !== null ? formatCurrency(userCredit) : '...'}</span>
                             </Link>
 
                             {/* Icons and Profile */}

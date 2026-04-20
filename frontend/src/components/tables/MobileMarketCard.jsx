@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import formatResolutionDate from '../../helpers/formatResolutionDate';
 import ExpandableText from '../utils/ExpandableText';
 import { getResolvedText, getResultCssClass } from '../../utils/labelMapping';
+import { CoinIcon } from '../../utils/CurrencyUtils';
 
 const MobileMarketCard = ({ marketData }) => {
   const isMarketOpen =
@@ -49,9 +50,10 @@ const MobileMarketCard = ({ marketData }) => {
       </Link>
       <div className='grid grid-cols-3 text-sm text-gray-400'>
         <span className='truncate'>👤 {marketData.numUsers}</span>
-        <span className='text-center'>
+        <div className='flex justify-center items-center gap-1'>
+          <CoinIcon size="text-[10px]" className="opacity-40" />
           {marketData.lastProbability.toFixed(2)}%
-        </span>
+        </div>
         <span
           className={`text-right ${
             marketData.market.isResolved

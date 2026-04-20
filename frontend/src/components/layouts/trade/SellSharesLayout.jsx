@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchUserShares, submitSale } from './TradeUtils';
 import { useMarketLabels } from '../../../hooks/useMarketLabels';
+import { CoinIcon, formatCurrency } from '../../../utils/CurrencyUtils';
 
 const SellSharesLayout = ({ marketId, market, token, onTransactionSuccess }) => {
     // Array of objects { outcome: "label", count: amount }
@@ -137,7 +138,10 @@ const SellSharesLayout = ({ marketId, market, token, onTransactionSuccess }) => 
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-lg font-black tracking-[0.05em] text-white/70">🪙 {share.count}</span>
+                                        <div className="text-lg font-black tracking-[0.05em] text-white/70 flex items-center gap-1">
+                                            <CoinIcon size="text-sm" />
+                                            {share.count}
+                                        </div>
                                         {isSelected && (
                                             <span className="material-symbols-outlined text-red-400 text-sm ml-2" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                                         )}
@@ -153,7 +157,9 @@ const SellSharesLayout = ({ marketId, market, token, onTransactionSuccess }) => 
                     <div className="flex items-center gap-6 mb-8">
                         <h2 className="text-sm font-black uppercase tracking-widest text-white/40">Amount</h2>
                         <div className="relative flex-1">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-sm font-black">🪙</span>
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
+                                <CoinIcon size="text-sm" />
+                            </div>
                             <input 
                                 type="number" 
                                 value={sellAmount} 

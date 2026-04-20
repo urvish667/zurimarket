@@ -4,26 +4,27 @@ import formatResolutionDate from '../../helpers/formatResolutionDate';
 import MobileMarketCard from './MobileMarketCard';
 import ExpandableText from '../utils/ExpandableText';
 import { getResolvedText, getResultCssClass } from '../../utils/labelMapping';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 const TableHeader = () => (
   <thead className='bg-gray-900'>
     <tr>
       {[
-        'Trade',
-        '🪙',
-        'Question',
-        '📅 Closes',
-        'Creator',
-        '👤 Users',
-        '📊 Size',
-        '💬',
-        'Resolution',
+        { label: 'Trade' },
+        { label: 'Price', icon: true },
+        { label: 'Question' },
+        { label: '📅 Closes' },
+        { label: 'Creator' },
+        { label: '👤 Users' },
+        { label: '📊 Size' },
+        { label: '💬' },
+        { label: 'Resolution' },
       ].map((header, index) => (
         <th
           key={index}
           className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'
         >
-          {header}
+          {header.icon ? <CoinIcon size="text-[10px]" /> : header.label}
         </th>
       ))}
     </tr>
@@ -40,7 +41,8 @@ const MarketRow = ({ marketData }) => (
         ⬆️⬇️
       </Link>
     </td>
-    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>
+    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300 flex items-center gap-1'>
+      <CoinIcon size="text-[10px]" className="opacity-40" />
       {marketData.lastProbability.toFixed(2)}
     </td>
     <td className='px-6 py-4 text-sm font-medium text-gray-300'>

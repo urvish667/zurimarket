@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CategoryBar from '../../components/markets/CategoryBar';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 const ChallengesPage = () => {
     const [activeCategory, setActiveCategory] = useState('all');
@@ -91,7 +92,10 @@ const ChallengesPage = () => {
                                     <div className="grid grid-cols-2 gap-8 border-y border-white/5 py-6 mb-8">
                                         <div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-1">Prize Pool</span>
-                                            <span className="text-xl font-headline font-black text-white">R{challenge.pool.toLocaleString()}</span>
+                                            <span className="text-xl font-headline font-black text-white flex items-center">
+                                                <CoinIcon size="text-lg" />
+                                                {formatCurrency(challenge.pool * 100)}
+                                            </span>
                                         </div>
                                         <div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-1">Ending In</span>

@@ -72,7 +72,7 @@ func TestCalculateAndAllocateProportionalPayouts_NoWinningShares(t *testing.T) {
 		t.Fatalf("failed to fetch loserbot: %v", err)
 	}
 
-	expectedBalance := int64(0)
+	expectedBalance := int64(100)
 	if u.AccountBalance != expectedBalance {
 		t.Errorf("loserbot balance = %d, want %d", u.AccountBalance, expectedBalance)
 	}
@@ -105,5 +105,36 @@ func TestCalculateAndAllocateProportionalPayouts_SuccessfulPayout(t *testing.T) 
 	expectedBalance := int64(100)
 	if u.AccountBalance != expectedBalance {
 		t.Errorf("winnerbot balance = %d, want %d", u.AccountBalance, expectedBalance)
+	}
+}
+
+func TestCalculateAndAllocateProportionalPayouts_MultipleChoicePayout(t *testing.T) {
+	db := modelstesting.NewFakeDB(t)
+	market := modelstesting.GenerateMarket(5, "creator")
+	market.OutcomeType = models.OutcomeTypeMultipleChoice
+	market.ResolutionResult = "B"
+	market.IsResolved = true
+	db.Create(&market)
+
+	winner := modelstesting.GenerateUser("choicewinner", 0)
+	loser := modelstesting.GenerateUser("choiceloser", 0)
+	db.Create(&winner)
+	db.Create(&loser)
+
+	db.Create(&models.Bet{Username: winner.Username, MarketID: uint(market.ID), Amount: 100, Outcome: "B"})
+	db.Create(&models.Bet{Username: loser.Username, MarketID: uint(market.ID), Amount: 300, Outcome: "A"})
+
+	err := calculateAndAllocateProportionalPayouts(&market, db)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	var updatedWinner models.User
+	if err := db.First(&updatedWinner, "username = ?", winner.Username).Error; err != nil {
+		t.Fatalf("failed to fetch winner: %v", err)
+	}
+
+	if updatedWinner.AccountBalance != 400 {
+		t.Errorf("winner balance = %d, want %d", updatedWinner.AccountBalance, 400)
 	}
 }

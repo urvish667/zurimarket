@@ -43,6 +43,16 @@ func UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.DateOfBirth == "" {
+		http.Error(w, "Date of birth is compulsory", http.StatusBadRequest)
+		return
+	}
+
+	if util.CalculateAge(req.DateOfBirth) < 18 {
+		http.Error(w, "Protocol restriction: You must be at least 18 years old to use ZuriMarket.", http.StatusBadRequest)
+		return
+	}
+
 	// Update user fields
 	user.FullName = req.FullName
 	user.DateOfBirth = req.DateOfBirth

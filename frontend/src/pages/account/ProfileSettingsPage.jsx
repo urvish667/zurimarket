@@ -3,6 +3,7 @@ import AccountSectionLayout from '../../components/layouts/profile/AccountSectio
 import { useAuth } from '../../helpers/AuthContent';
 import useUserData from '../../hooks/useUserData';
 import { API_URL } from '../../config';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 const ProfileSettingsPage = () => {
     const { token } = useAuth();
@@ -39,10 +40,34 @@ const ProfileSettingsPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const calculateAge = (dobString) => {
+        if (!dobString) return 0;
+        const today = new Date();
+        const birthDate = new Date(dobString);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         setMessage('');
+
+        if (!formData.dateOfBirth) {
+            setMessage('ERROR: DATE OF BIRTH IS COMPULSORY');
+            setSaving(false);
+            return;
+        }
+
+        if (calculateAge(formData.dateOfBirth) < 18) {
+            setMessage('ERROR: YOU MUST BE 18+ TO USE THIS PROTOCOL');
+            setSaving(false);
+            return;
+        }
 
         try {
             const response = await fetch(`${API_URL}/v0/profilechange/update`, {
@@ -141,6 +166,7 @@ const ProfileSettingsPage = () => {
                             <div className="space-y-2">
                                 <label className="text-[8px] font-black text-white/40 uppercase tracking-[0.3em] block ml-1">DOB</label>
                                 <input
+                                    required
                                     name="dateOfBirth"
                                     type="date"
                                     value={formData.dateOfBirth}
@@ -210,6 +236,56 @@ const ProfileSettingsPage = () => {
                                     placeholder="State"
                                 />
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Referral Section */}
+                <div className="bg-[#0e0e0e]/50 border border-white/5 p-5 md:p-8 rounded-none relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-[#ddff5c]/5 -mr-12 -mt-12 rotate-45 border border-[#ddff5c]/10"></div>
+                    
+                    <div className="flex items-center mb-8 gap-3">
+                        <h3 className="text-[10px] font-black text-white uppercase tracking-[0.4em] shrink-0">Protocol Outreach</h3>
+                        <div className="h-[1px] bg-white/5 flex-1"></div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                        <div className="flex-1 w-full">
+                            <label className="text-[8px] font-black text-white/40 uppercase tracking-[0.3em] block ml-1 mb-2">Unique Referral Identifier</label>
+                            <div className="flex items-stretch gap-2">
+                                <div className="flex-1 bg-black border border-white/10 p-4 font-mono text-xl md:text-2xl text-[#ddff5c] tracking-[0.2em] font-black uppercase flex items-center justify-center">
+                                    {userData?.referralCode || '-------'}
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        if (userData?.referralCode) {
+                                            navigator.clipboard.writeText(userData.referralCode);
+                                            setMessage('REFERRAL CODE COPIED');
+                                            setTimeout(() => setMessage(''), 3000);
+                                        }
+                                    }}
+                                    className="px-5 bg-white text-black hover:bg-[#ddff5c] transition-all flex items-center justify-center"
+                                    title="Copy to clipboard"
+                                >
+                                    <span className="material-symbols-outlined text-lg">content_copy</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="w-full md:w-auto bg-[#ddff5c]/5 border border-[#ddff5c]/10 p-6 flex flex-col items-center md:items-start text-center md:text-left min-w-[280px]">
+                            <div className="flex items-center gap-2 mb-2">
+                                <p className="text-[9px] font-black text-[#ddff5c] uppercase tracking-[0.3em]">Network Bonus</p>
+                                <div className="h-px w-8 bg-[#ddff5c]/20"></div>
+                            </div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <CoinIcon size="text-xl" />
+                                <span className="text-2xl font-black text-white uppercase tracking-tighter">{formatCurrency(10000).split('.')[0]}</span>
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest self-end pb-1 ml-1">Coins / Invite</span>
+                            </div>
+                            <p className="text-[9px] text-white/40 leading-relaxed uppercase tracking-widest font-bold">
+                                Credit issued upon referee's <span className="text-white">first verified prediction</span>.
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -400,8 +400,8 @@ function Create() {
           </div>
           <p className="text-[10px] font-black uppercase tracking-widest text-white/30 leading-relaxed">
             {outcomeType === 'BINARY' 
-              ? 'Simple percentage odds based on how many users are betting on each side. Example: "65% Yes / 35% No."'
-              : 'Each option shows its probability as a share of total bets. Odds update dynamically as users trade.'
+              ? 'Binary odds use the platform probability engine and update after each trade. Example: "65% Yes / 35% No."'
+              : 'Each option shows a normalized probability from the platform probability engine, not just a raw share of bets.'
             }
           </p>
         </div>

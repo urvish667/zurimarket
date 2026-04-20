@@ -9,8 +9,8 @@ economics:
     createMarketCost: 10
     traderBonus: 1
   user:
-    initialAccountBalance: 0
-    maximumDebtAllowed: 500
+    initialAccountBalance: 25000
+    maximumDebtAllowed: 50000
   betting:
     minimumBet: 1
     maxDustPerSale: 2

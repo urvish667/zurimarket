@@ -4,6 +4,7 @@ import { API_URL } from '../../config';
 import SiteButton from '../../components/buttons/SiteButtons';
 import LoadingSpinner from '../../components/loaders/LoadingSpinner';
 import SiteTabs from '../../components/tabs/SiteTabs';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 // MetricCard Component
 const MetricCard = ({
@@ -20,7 +21,7 @@ const MetricCard = ({
   const formatValue = (val) => {
     if (isStatus) return val;
     if (typeof val === 'number') {
-      return val.toLocaleString();
+      return formatCurrency(val);
     }
     return val;
   };
@@ -40,9 +41,10 @@ const MetricCard = ({
         )}
       </div>
 
-      <p className={`${colorClass} ${isTotal ? 'text-3xl' : 'text-2xl'} font-bold mb-2`}>
+      <div className={`${colorClass} ${isTotal ? 'text-3xl' : 'text-2xl'} font-bold mb-2 flex items-center gap-1`}>
+        {!isStatus && typeof value === 'number' && <CoinIcon size={isTotal ? "text-2xl" : "text-xl"} />}
         {formatValue(value)}
-      </p>
+      </div>
 
       {explanation && (
         <p className="text-gray-400 text-xs mb-2">{explanation}</p>
@@ -209,8 +211,13 @@ const Stats = () => {
             </div>
 
             {/* Value */}
-            <div className="sp-cell-num text-xs sm:text-sm text-white font-semibold">
-              {typeof value === 'number' ? value.toLocaleString() : value.toString()}
+            <div className="sp-cell-num text-xs sm:text-sm text-white font-semibold flex items-center gap-1">
+              {typeof value === 'number' ? (
+                <>
+                  <CoinIcon size="text-xs" className="text-white/40" />
+                  {formatCurrency(value)}
+                </>
+              ) : value.toString()}
             </div>
 
             {/* Explanation (desktop only on mobile, full width below on mobile) */}
@@ -496,13 +503,22 @@ const Stats = () => {
                       </Link>
                     </td>
                     <td className={`py-3 px-4 font-semibold ${getProfitColor(user.totalProfit)}`}>
-                      {user.totalProfit >= 0 ? '+' : ''}{user.totalProfit.toLocaleString()}
+                      <div className="flex items-center gap-1">
+                        {!isStatus && <CoinIcon size="text-xs" className="text-white/20" />}
+                        {user.totalProfit >= 0 ? '+' : ''}{formatCurrency(user.totalProfit)}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-gray-300">
-                      {user.totalCurrentValue.toLocaleString()}
+                      <div className="flex items-center gap-1">
+                        <CoinIcon size="text-xs" className="text-white/10" />
+                        {formatCurrency(user.totalCurrentValue)}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-gray-300">
-                      {user.totalSpent.toLocaleString()}
+                      <div className="flex items-center gap-1">
+                        <CoinIcon size="text-xs" className="text-white/10" />
+                        {formatCurrency(user.totalSpent)}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-gray-300 text-center">
                       {user.activeMarkets}

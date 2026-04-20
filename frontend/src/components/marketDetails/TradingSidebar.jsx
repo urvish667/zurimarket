@@ -3,6 +3,7 @@ import { submitBet } from '../layouts/trade/TradeUtils';
 import { fetchUserShares, submitSale } from '../layouts/trade/TradeUtils';
 import { useMarketLabels } from '../../hooks/useMarketLabels';
 import MarketProjectionLayout from '../layouts/marketprojection/MarketProjectionLayout';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSuccess, currentProbability, optionProbabilities = {}, externalSelectedOutcome }) => {
   const [mode, setMode] = useState('buy'); // 'buy' or 'sell'
@@ -273,7 +274,9 @@ const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSucc
             <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Amount</span>
           </div>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm font-black">🪙</span>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center">
+              <CoinIcon size="text-sm" />
+            </div>
             <input
               type="number"
               value={amount}
@@ -290,8 +293,9 @@ const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSucc
             <button
               key={val}
               onClick={() => handleQuickAmount(val)}
-              className="flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-all"
+              className="flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-all flex items-center justify-center gap-0.5"
             >
+              <CoinIcon size="text-[8px]" className="opacity-40" />
               +{val}
             </button>
           ))}
@@ -315,7 +319,7 @@ const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSucc
           <button
             onClick={handleSubmit}
             disabled={!selectedOutcome || amount < 1 || isSubmitting}
-            className={`w-full py-3.5 text-xs font-black uppercase tracking-[0.2em] transition-all ${
+            className={`w-full py-3.5 text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
               !selectedOutcome || amount < 1 || isSubmitting
                 ? 'bg-white/5 text-white/20 cursor-not-allowed'
                 : mode === 'buy'
@@ -324,8 +328,11 @@ const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSucc
             }`}
           >
             {isSubmitting ? 'Processing...' : 
-             !selectedOutcome ? 'Select outcome' :
-             `${mode === 'buy' ? 'Buy' : 'Sell'} ${selectedOutcome}`}
+             !selectedOutcome ? 'Select outcome' : (
+               <>
+                {mode === 'buy' ? 'Buy' : 'Sell'} {selectedOutcome}
+               </>
+             )}
           </button>
         )}
 
@@ -335,7 +342,10 @@ const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSucc
             {(mode === 'buy' ? feeData.BuySharesFee : feeData.SellSharesFee) > 0 ? (
               <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/30">
                 <span>Trading Fee</span>
-                <span>🪙 {mode === 'buy' ? feeData.BuySharesFee : feeData.SellSharesFee}</span>
+                <span className="flex items-center gap-1">
+                  <CoinIcon size="text-[10px]" />
+                  {formatCurrency(mode === 'buy' ? feeData.BuySharesFee : feeData.SellSharesFee)}
+                </span>
               </div>
             ) : (
               <p className="text-[10px] font-black uppercase tracking-widest text-white/20 text-center">No trading fees</p>
@@ -344,13 +354,21 @@ const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSucc
         )}
 
         {/* Projection (buy only) */}
-        {mode === 'buy' && selectedOutcome && amount > 0 && (
+        {mode === 'buy' && selectedOutcome && amount > 0 && !isMultipleChoice && (
           <div className="mt-4 pt-3 border-t border-white/5">
             <MarketProjectionLayout
               marketId={marketId}
               amount={amount}
               direction={selectedOutcome}
             />
+          </div>
+        )}
+
+        {mode === 'buy' && selectedOutcome && amount > 0 && isMultipleChoice && (
+          <div className="mt-4 pt-3 border-t border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/30 text-center">
+              Projection preview is currently available for binary markets only.
+            </p>
           </div>
         )}
       </div>

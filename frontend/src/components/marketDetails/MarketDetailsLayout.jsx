@@ -7,6 +7,7 @@ import TradeCTA from '../TradeCTA';
 import TradeTabs from '../../components/tabs/TradeTabs';
 import TradingSidebar from './TradingSidebar';
 import formatResolutionDate from '../../helpers/formatResolutionDate';
+import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 // Colors for multi-outcome legend dots
 const OUTCOME_COLORS = [
@@ -310,7 +311,7 @@ function MarketDetailsTable({
           <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 text-center mb-6'>
             {[
               { label: 'Traders', value: `${numUsers}`, icon: 'group' },
-              { label: 'Volume', value: `🪙 ${Math.round(totalVolume)}`, icon: 'database' },
+              { label: 'Volume', value: formatCurrency(totalVolume), coinIcon: true, icon: 'database' },
               { label: 'Comments', value: '0', icon: 'chat_bubble' },
               {
                 label: 'Closes',
@@ -321,7 +322,10 @@ function MarketDetailsTable({
               <div key={index} className='bg-white/[0.02] border border-white/10 p-3 flex flex-col items-center justify-center'>
                 <span className='material-symbols-outlined text-white/20 text-lg mb-1'>{item.icon}</span>
                 <div className='text-[10px] font-black uppercase tracking-widest text-white/30 mb-0.5'>{item.label}</div>
-                <div className='text-xs font-black tracking-widest truncate max-w-full'>{item.value}</div>
+                <div className='text-xs font-black tracking-widest truncate max-w-full flex items-center justify-center gap-1'>
+                  {item.coinIcon && <CoinIcon size="text-[10px]" className="text-white/20" />}
+                  {item.value}
+                </div>
               </div>
             ))}
           </div>
@@ -331,7 +335,10 @@ function MarketDetailsTable({
               <div className='bg-[#ddff5c]/5 border border-[#ddff5c]/20 px-4 py-2 flex items-center gap-2'>
                 <span className='material-symbols-outlined text-[#ddff5c] text-sm'>auto_awesome</span>
                 <span className='text-[10px] font-black uppercase tracking-widest text-[#ddff5c]/60'>Dust</span>
-                <span className='text-xs font-black tracking-widest text-[#ddff5c]'>🪙 {marketDust}</span>
+                <span className='text-xs font-black tracking-widest text-[#ddff5c] flex items-center gap-1'>
+                  <CoinIcon size="text-xs" />
+                  {formatCurrency(marketDust)}
+                </span>
               </div>
             </div>
           )}

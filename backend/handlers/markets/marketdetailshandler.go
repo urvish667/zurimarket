@@ -10,6 +10,7 @@ import (
 	"socialpredict/handlers/tradingdata"
 	"socialpredict/handlers/users/publicuser"
 	"socialpredict/models"
+	"socialpredict/setup"
 	"socialpredict/util"
 	"strconv"
 
@@ -18,13 +19,13 @@ import (
 
 // MarketDetailResponse defines the structure for the market detail response
 type MarketDetailHandlerResponse struct {
-	Market             marketpublicresponse.PublicResponseMarket `json:"market"`
-	Creator            models.PublicUser                         `json:"creator"`
-	ProbabilityChanges []wpam.ProbabilityChange                  `json:"probabilityChanges"`
-	NumUsers           int                                       `json:"numUsers"`
-	TotalVolume        int64                                     `json:"totalVolume"`
-	MarketDust         int64                                     `json:"marketDust"`
-	OptionProbabilities map[string]float64                       `json:"optionProbabilities,omitempty"`
+	Market              marketpublicresponse.PublicResponseMarket `json:"market"`
+	Creator             models.PublicUser                         `json:"creator"`
+	ProbabilityChanges  []wpam.ProbabilityChange                  `json:"probabilityChanges"`
+	NumUsers            int                                       `json:"numUsers"`
+	TotalVolume         int64                                     `json:"totalVolume"`
+	MarketDust          int64                                     `json:"marketDust"`
+	OptionProbabilities map[string]float64                        `json:"optionProbabilities,omitempty"`
 }
 
 func MarketDetailsHandler(w http.ResponseWriter, r *http.Request) {
@@ -107,34 +108,33 @@ func MarketDetailsHandler(w http.ResponseWriter, r *http.Request) {
 // Each option's probability = (total amount bet on that option) / (total amount bet across all options).
 func calculateMultipleChoiceProbabilities(bets []models.Bet, options []marketpublicresponse.PublicResponseMarketOption) map[string]float64 {
 	result := make(map[string]float64)
-
-	// Initialize all options with 0
-	for _, opt := range options {
-		result[opt.Label] = 0
-	}
-
-	// Sum up bets per outcome
-	totalAmount := int64(0)
-	optionAmounts := make(map[string]int64)
-
-	for _, bet := range bets {
-		if bet.Amount > 0 { // Only count buy bets
-			optionAmounts[bet.Outcome] += bet.Amount
-			totalAmount += bet.Amount
-		}
-	}
-
-	if totalAmount == 0 {
-		// Equal probability if no bets
-		equalProb := 1.0 / float64(len(options))
-		for _, opt := range options {
-			result[opt.Label] = equalProb
-		}
+	if len(options) == 0 {
 		return result
 	}
 
+	appConfig, err := setup.LoadEconomicsConfig()
+	initPool := 0.0
+	if err == nil {
+		initPool = float64(appConfig.Economics.MarketCreation.InitialMarketSubsidization)
+	}
+
+	optionAmounts := make(map[string]float64, len(options))
+	for _, bet := range bets {
+		optionAmounts[bet.Outcome] += float64(bet.Amount)
+	}
+
+	initProb := 1.0 / float64(len(options))
+	outcomes := make([]wpam.OutcomeInput, 0, len(options))
 	for _, opt := range options {
-		result[opt.Label] = float64(optionAmounts[opt.Label]) / float64(totalAmount)
+		outcomes = append(outcomes, wpam.OutcomeInput{
+			Label:    opt.Label,
+			InitProb: initProb,
+			Wagered:  optionAmounts[opt.Label],
+		})
+	}
+
+	for _, probability := range wpam.CalculateMultiOutcomeProbabilities(initPool, outcomes) {
+		result[probability.Label] = probability.Probability
 	}
 
 	return result

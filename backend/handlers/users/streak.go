@@ -2,6 +2,7 @@ package usershandlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"socialpredict/middleware"
 	"socialpredict/util"
@@ -40,15 +41,15 @@ func DailyLoginStreakHandler(w http.ResponseWriter, r *http.Request) {
 			// Consecutive day
 			user.CurrentStreak++
 			if user.CurrentStreak == 7 {
-				// Award R200 bonus
+				// Award 200 Coins bonus
 				bonusAmount := int64(20000)
 				user.AccountBalance += bonusAmount
 				bonusAwarded = true
-				message = "7-day streak reached! R200 bonus awarded."
-				// Optionally reset or keep going. Usually reset for the next 7.
+				message = fmt.Sprintf("7-day streak reached! 200 bonus coins awarded.")
+				// Reset streak after bonus
 				user.CurrentStreak = 0 
 			} else {
-				message = "Streak continued! Day " + string(rune(user.CurrentStreak+'0'))
+				message = fmt.Sprintf("Streak continued! Day %d", user.CurrentStreak)
 			}
 		} else if diff >= 2 || user.LastLoginDate == 0 {
 			// Streak broken or first record
