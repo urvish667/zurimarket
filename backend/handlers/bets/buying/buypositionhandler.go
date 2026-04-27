@@ -47,33 +47,32 @@ func PlaceBetHandler(loadEconConfig setup.EconConfigLoader) func(http.ResponseWr
 // All DB writes are performed inside a single transaction with an atomic
 // balance deduction to prevent race conditions and double-spending.
 func PlaceBetCore(user *models.User, betRequest models.Bet, db *gorm.DB, loadEconConfig setup.EconConfigLoader) (*models.Bet, error) {
-	// Read-only checks — safe to do outside the transaction
-	if err := betutils.CheckMarketStatus(db, betRequest.MarketID); err != nil {
-		return nil, err
-	}
-
-	sumOfBetFees := betutils.GetBetFees(db, user, betRequest)
-
-	// Pre-flight balance check using the in-memory user (fast rejection before hitting the DB)
-	if err := checkUserBalance(user, betRequest, sumOfBetFees, loadEconConfig); err != nil {
-		return nil, err
-	}
-
-	// Create bet object and validate it (read-only DB checks)
-	bet := models.CreateBet(user.Username, betRequest.MarketID, betRequest.Amount, betRequest.Outcome)
-	if err := betutils.ValidateBuy(db, &bet); err != nil {
-		return nil, err
-	}
-
-	appConfig := loadEconConfig()
-	totalCost := bet.Amount + sumOfBetFees
-	minimumBalance := -appConfig.Economics.User.MaximumDebtAllowed
-
 	var resultBet *models.Bet
 	err := db.Transaction(func(tx *gorm.DB) error {
+		// All DB operations inside the transaction use 'tx'
+		if err := betutils.CheckMarketStatus(tx, betRequest.MarketID); err != nil {
+			return err
+		}
+
+		sumOfBetFees := betutils.GetBetFees(tx, user, betRequest)
+
+		// Pre-flight balance check (fast rejection before hitting the DB update)
+		if err := checkUserBalance(user, betRequest, sumOfBetFees, loadEconConfig); err != nil {
+			return err
+		}
+
+		// Create bet object and validate it
+		bet := models.CreateBet(user.Username, betRequest.MarketID, betRequest.Amount, betRequest.Outcome)
+		if err := betutils.ValidateBuy(tx, &bet); err != nil {
+			return err
+		}
+
+		appConfig := loadEconConfig()
+		totalCost := bet.Amount + sumOfBetFees
+		minimumBalance := -appConfig.Economics.User.MaximumDebtAllowed
+
 		// Atomic conditional deduction:
 		// Only succeeds if virtual_balance - totalCost >= minimumBalance.
-		// If a concurrent request already deducted funds, RowsAffected == 0 and we abort.
 		res := tx.Model(&models.User{}).
 			Where("username = ? AND virtual_balance - ? >= ?", user.Username, totalCost, minimumBalance).
 			UpdateColumn("virtual_balance", gorm.Expr("virtual_balance - ?", totalCost))
@@ -96,7 +95,6 @@ func PlaceBetCore(user *models.User, betRequest models.Bet, db *gorm.DB, loadEco
 
 			// Award referral bonus if referred by someone
 			if user.ReferredBy != "" {
-				// Bonus amount: R100 = 10,000 cents
 				bonusAmount := int64(10000)
 				res := tx.Model(&models.User{}).
 					Where("referral_code = ?", user.ReferredBy).
@@ -104,9 +102,6 @@ func PlaceBetCore(user *models.User, betRequest models.Bet, db *gorm.DB, loadEco
 
 				if res.Error != nil {
 					log.Printf("Referral bonus failed for code %s: %v", user.ReferredBy, res.Error)
-					// We don't necessarily want to fail the WHOLE bet if the referral bonus fails,
-					// but for prop firms, strictness is often preferred.
-					// For now, we log it.
 				}
 			}
 		}

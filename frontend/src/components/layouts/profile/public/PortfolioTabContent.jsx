@@ -4,22 +4,23 @@ import { API_URL } from '../../../../config';
 import { SharesBadge } from '../../../buttons/trade/SellButtons';
 import LoadingSpinner from '../../../loaders/LoadingSpinner';
 import { mapInternalToDisplay } from '../../../../utils/labelMapping';
+import Pagination from '../../../common/Pagination';
 
 const PortfolioTabContent = ({ username }) => {
     const [positions, setPositions] = useState([]);
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchPositions = async () => {
             try {
-                console.log(`Fetching portfolio for: ${username} from ${API_URL}/v0/portfolio/${username}`);
-                const response = await fetch(`${API_URL}/v0/portfolio/${username}`);
+                const response = await fetch(`${API_URL}/v0/portfolio/${username}?page=${currentPage}&limit=10`);
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Portfolio data:', data);
-                    // Backend returns { portfolioItems: [...], totalSharesOwned: ... }
                     setPositions(data.portfolioItems || []);
+                    setPagination(data.pagination);
                 } else {
                     throw new Error(`Error fetching portfolio: ${response.statusText}`);
                 }
@@ -34,7 +35,11 @@ const PortfolioTabContent = ({ username }) => {
         if (username) {
             fetchPositions();
         }
-    }, [username]);
+    }, [username, currentPage]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
 
     if (loading) {
         return (
@@ -151,6 +156,15 @@ const PortfolioTabContent = ({ username }) => {
                         </tbody>
                     </table>
                 </div>
+                {pagination && pagination.totalPages > 1 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={pagination.totalPages}
+                        onPageChange={handlePageChange}
+                        totalRows={pagination.totalRows}
+                        limit={pagination.limit}
+                    />
+                )}
             </div>
 
             {/* Portfolio Summary */}
@@ -160,7 +174,7 @@ const PortfolioTabContent = ({ username }) => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                         <div>
                             <div className="text-custom-gray-light font-medium mb-1">Total Markets</div>
-                            <div className="text-2xl font-bold text-white">{positions.length}</div>
+                            <div className="text-2xl font-bold text-white">{pagination?.totalRows || positions.length}</div>
                         </div>
                         <div>
                             <div className="text-custom-gray-light font-medium mb-1">Total YES Shares</div>

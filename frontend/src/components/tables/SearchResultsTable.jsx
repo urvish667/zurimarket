@@ -1,7 +1,8 @@
 import React from 'react';
 import MarketTable from './MarketTable';
+import Pagination from '../common/Pagination';
 
-const SearchResultsTable = ({ searchResults }) => {
+const SearchResultsTable = ({ searchResults, currentPage, onPageChange }) => {
     if (!searchResults) {
         return null;
     }
@@ -21,6 +22,8 @@ const SearchResultsTable = ({ searchResults }) => {
             </div>
         );
     }
+
+    const { pagination } = searchResults;
 
     return (
         <div className="space-y-6">
@@ -66,14 +69,26 @@ const SearchResultsTable = ({ searchResults }) => {
                 </div>
             )}
 
-            {/* Summary */}
-            <div className="text-center py-4 border-t border-gray-700">
-                <p className="text-sm text-gray-400">
-                    Found {searchResults.totalCount} markets matching "{searchResults.query}"
-                    {searchResults.fallbackUsed && 
-                        ` (${searchResults.primaryCount} in ${searchResults.primaryStatus}, ${searchResults.fallbackCount} in other categories)`
-                    }
-                </p>
+            {/* Summary & Pagination */}
+            <div className="pt-4 border-t border-gray-700">
+                <div className="text-center mb-4">
+                    <p className="text-sm text-gray-400">
+                        Found {searchResults.totalCount} markets matching "{searchResults.query}"
+                        {searchResults.fallbackUsed && 
+                            ` (${searchResults.primaryCount} in ${searchResults.primaryStatus}, ${searchResults.fallbackCount} in other categories)`
+                        }
+                    </p>
+                </div>
+
+                {pagination && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={pagination.totalPages}
+                        onPageChange={onPageChange}
+                        totalRows={pagination.totalRows}
+                        limit={pagination.limit}
+                    />
+                )}
             </div>
         </div>
     );

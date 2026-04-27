@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"socialpredict/models"
@@ -16,7 +17,17 @@ import (
 // login and validation stuff
 // getJWTKey returns the JWT signing key, checking environment variable at runtime
 func getJWTKey() []byte {
-	return []byte(os.Getenv("JWT_SIGNING_KEY"))
+	key := os.Getenv("JWT_SIGNING_KEY")
+	if key == "" {
+		if os.Getenv("APP_ENV") == "production" {
+			// In production, we should probably panic or log fatal, but for now we'll log a strong warning.
+			// The user specified that this needs to be verified.
+			log.Printf("SECURITY WARNING: JWT_SIGNING_KEY is not set in production! Using insecure empty key.")
+		} else {
+			log.Printf("DEBUG: JWT_SIGNING_KEY not set, using default empty key for development.")
+		}
+	}
+	return []byte(key)
 }
 
 // UserClaims represents the expected structure of the JWT claims

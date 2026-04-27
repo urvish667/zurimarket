@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"socialpredict/handlers/math/probabilities/wpam"
-	"socialpredict/handlers/tradingdata"
 	"socialpredict/models"
 	"socialpredict/util"
 	"sort"
@@ -24,6 +23,12 @@ type BetDisplayInfo struct {
 	PlacedAt    time.Time `json:"placedAt"`
 }
 
+// MarketBetsDisplayResponse defines the structure for paginated betting history
+type MarketBetsDisplayResponse struct {
+	Bets       []BetDisplayInfo `json:"bets"`
+	Pagination util.Pagination  `json:"pagination"`
+}
+
 func MarketBetsDisplayHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	marketIdStr := vars["marketId"]
@@ -31,7 +36,8 @@ func MarketBetsDisplayHandler(w http.ResponseWriter, r *http.Request) {
 	// Convert marketId to uint
 	parsedUint64, err := strconv.ParseUint(marketIdStr, 10, 32)
 	if err != nil {
-		// handle error
+		http.Error(w, "Invalid market ID", http.StatusBadRequest)
+		return
 	}
 
 	// Convert uint64 to uint safely.
@@ -39,30 +45,39 @@ func MarketBetsDisplayHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Database connection
 	db := util.GetDB()
+	page, limit := util.GetPaginationParams(r)
 
-	// Fetch bets for the market
-	bets := tradingdata.GetBetsForMarket(db, marketIDUint)
+	// Fetch bets for the market with pagination
+	var bets []models.Bet
+	totalRows, err := util.Paginate(db.Where("market_id = ?", marketIDUint).Order("placed_at DESC"), page, limit, &bets)
+	if err != nil {
+		http.Error(w, "Error fetching bets", http.StatusInternalServerError)
+		return
+	}
 
 	// feed in the time created
-	// note we are not using GetPublicResponseMarketByID because of circular import
 	var market models.Market
 	result := db.Where("ID = ?", marketIdStr).First(&market)
 	if result.Error != nil {
-		// Handle error, for example:
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			// Market not found
+			http.Error(w, "Market not found", http.StatusNotFound)
 		} else {
-			// Other error fetching market
+			http.Error(w, "Error fetching market", http.StatusInternalServerError)
 		}
-		return // Make sure to return or appropriately handle the error
+		return
 	}
 
 	// Process bets and calculate market probability at the time of each bet
 	betsDisplayInfo := processBetsForDisplay(market.CreatedAt, bets, db)
 
+	response := MarketBetsDisplayResponse{
+		Bets:       betsDisplayInfo,
+		Pagination: util.GetPaginationMetadata(totalRows, page, limit),
+	}
+
 	// Respond with the bets display information
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(betsDisplayInfo)
+	json.NewEncoder(w).Encode(response)
 }
 
 func processBetsForDisplay(marketCreatedAtTime time.Time, bets []models.Bet, db *gorm.DB) []BetDisplayInfo {

@@ -14,6 +14,8 @@ const (
 	RoleAdmin = "ADMIN"
 )
 
+// User represents the main user entity in the system.
+// Note: Some fields are inherited from PublicUser and PrivateUser.
 type User struct {
 	gorm.Model
 	ID int64 `json:"id" gorm:"primary_key"`
@@ -26,6 +28,7 @@ type User struct {
 
 const referralCodeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+// PublicUser contains fields that are safe to expose in public API responses.
 type PublicUser struct {
 	Username              string `json:"username" gorm:"unique;not null"`
 	DisplayName           string `json:"displayname" gorm:"unique;not null"`
@@ -49,17 +52,20 @@ type PublicUser struct {
 	CurrentStreak int    `json:"currentStreak" gorm:"default:0"`
 }
 
+// PrivateUser contains sensitive user information.
+// IMPORTANT: Sensitive fields like Password and OTPCode MUST have the `json:"-"` tag
+// to prevent them from being leaked in JSON API responses.
 type PrivateUser struct {
 	Email         string `json:"email" gorm:"unique;not null"`
 	PhoneNumber   string `json:"phoneNumber"`
 	EmailVerified bool   `json:"emailVerified" gorm:"default:false"`
 	PhoneVerified bool   `json:"phoneVerified" gorm:"default:false"`
 	APIKey        string `json:"apiKey,omitempty" gorm:"unique"`
-	Password      string `json:"-" gorm:"not null"`
+	Password      string `json:"-" gorm:"not null"` // json:"-" tag prevents password leakage
 
 	// OTP Tracking (not exposed to JSON)
-	OTPCode       string `json:"-"`
-	OTPExpiry     int64  `json:"-"`
+	OTPCode       string `json:"-"` // json:"-" tag prevents OTP leakage
+	OTPExpiry     int64  `json:"-"` // json:"-" tag prevents OTP leakage
 	LastLoginDate int64  `json:"lastLoginDate"` // Unix timestamp
 }
 

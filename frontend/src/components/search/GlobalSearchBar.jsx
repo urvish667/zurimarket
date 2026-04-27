@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { searchMarkets } from '../../api/marketsApi';
 import { RegularInput } from '../inputs/InputBar';
 
-const GlobalSearchBar = ({ onSearchResults, currentStatus, isSearching, setIsSearching }) => {
+const GlobalSearchBar = ({ onSearchResults, currentStatus, isSearching, setIsSearching, page = 1 }) => {
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Debounce search queries - trigger on query OR status change
+    // Debounce search queries - trigger on query OR status OR page change
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             if (query.trim().length > 0) {
-                performSearch(query.trim());
+                performSearch(query.trim(), page);
             } else {
                 // Clear search when query is empty
                 onSearchResults(null);
@@ -19,14 +19,14 @@ const GlobalSearchBar = ({ onSearchResults, currentStatus, isSearching, setIsSea
         }, 300); // 300ms debounce
 
         return () => clearTimeout(timeoutId);
-    }, [query, currentStatus]);
+    }, [query, currentStatus, page]);
 
-    const performSearch = async (searchQuery) => {
+    const performSearch = async (searchQuery, searchPage) => {
         setLoading(true);
         setIsSearching(true);
         
         try {
-            const results = await searchMarkets(searchQuery, currentStatus, 20);
+            const results = await searchMarkets(searchQuery, currentStatus, searchPage, 20);
             onSearchResults(results);
         } catch (error) {
             console.error('Search error:', error);

@@ -1,23 +1,31 @@
 import { API_URL } from '../../../../config';
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // Import Link
+import { Link } from 'react-router-dom';
+import Pagination from '../../../common/Pagination';
 
 const BetsActivityLayout = ({ marketId, refreshTrigger }) => {
     const [bets, setBets] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pagination, setPagination] = useState(null);
 
     useEffect(() => {
         const fetchBets = async () => {
-            const response = await fetch(`${API_URL}/v0/markets/bets/${marketId}`, {
+            const response = await fetch(`${API_URL}/v0/markets/bets/${marketId}?page=${currentPage}&limit=20`, {
             });
             if (response.ok) {
                 const data = await response.json();
-                setBets(data.sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt)));
+                setBets(data.bets || []);
+                setPagination(data.pagination);
             } else {
                 console.error('Error fetching bets:', response.statusText);
             }
         };
         fetchBets();
-    }, [marketId, refreshTrigger]);
+    }, [marketId, refreshTrigger, currentPage]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
 
     return (
         <div className="p-0">
@@ -60,10 +68,17 @@ const BetsActivityLayout = ({ marketId, refreshTrigger }) => {
                     </div>
                 </div>
             ))}
+            {pagination && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={pagination.totalPages}
+                    onPageChange={handlePageChange}
+                    totalRows={pagination.totalRows}
+                    limit={pagination.limit}
+                />
+            )}
         </div>
     );
-
-
 };
 
 export default BetsActivityLayout;

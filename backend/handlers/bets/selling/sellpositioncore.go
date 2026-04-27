@@ -31,59 +31,57 @@ func (e ErrDustCapExceeded) IsBusinessRuleError() bool {
 }
 
 func ProcessSellRequest(db *gorm.DB, redeemRequest *models.Bet, user *models.User, cfg *setup.EconomicConfig) error {
-
-	if err := betutils.CheckMarketStatus(db, redeemRequest.MarketID); err != nil {
-		return err
-	}
-
-	var market models.Market
-	if err := db.First(&market, redeemRequest.MarketID).Error; err != nil {
-		return errors.New("error fetching market")
-	}
-	if market.OutcomeType == models.OutcomeTypeMultipleChoice {
-		return errors.New("selling not supported on multiple-choice markets")
-	}
-
-	marketIDStr := strconv.FormatUint(uint64(redeemRequest.MarketID), 10)
-	requestedCredits := redeemRequest.Amount
-
-	userNetPosition, err := getUserNetPositionForMarket(db, marketIDStr, user.Username)
-	if err != nil {
-		return err
-	}
-
-	sharesOwned, err := getSharesOwnedForOutcome(userNetPosition, redeemRequest.Outcome)
-	if err != nil {
-		return err
-	}
-
-	sharesToSell, actualSaleValue, err := calculateSharesToSell(
-		userNetPosition, sharesOwned, redeemRequest.Amount, cfg)
-	if err != nil {
-		return err
-	}
-
-	if sharesToSell == 0 {
-		return errors.New("not enough value to sell at least one share")
-	}
-
-	bet := models.Bet{
-		Username: user.Username,
-		MarketID: redeemRequest.MarketID,
-		Amount:   -sharesToSell, // negative share amount means sale
-		// Keep requested credits so historical dust can be reconstructed.
-		RequestedAmount: requestedCredits,
-		PlacedAt:        time.Now(),
-		Outcome:         redeemRequest.Outcome,
-	}
-
-	if err := betutils.ValidateSale(db, &bet); err != nil {
-		return err
-	}
-
-	// Wrap the two DB writes in a single transaction:
-	// credit the user's balance AND record the sale bet atomically.
 	return db.Transaction(func(tx *gorm.DB) error {
+		if err := betutils.CheckMarketStatus(tx, redeemRequest.MarketID); err != nil {
+			return err
+		}
+
+		var market models.Market
+		if err := tx.First(&market, redeemRequest.MarketID).Error; err != nil {
+			return errors.New("error fetching market")
+		}
+		if market.OutcomeType == models.OutcomeTypeMultipleChoice {
+			return errors.New("selling not supported on multiple-choice markets")
+		}
+
+		marketIDStr := strconv.FormatUint(uint64(redeemRequest.MarketID), 10)
+		requestedCredits := redeemRequest.Amount
+
+		userNetPosition, err := getUserNetPositionForMarket(tx, marketIDStr, user.Username)
+		if err != nil {
+			return err
+		}
+
+		sharesOwned, err := getSharesOwnedForOutcome(userNetPosition, redeemRequest.Outcome)
+		if err != nil {
+			return err
+		}
+
+		sharesToSell, actualSaleValue, err := calculateSharesToSell(
+			userNetPosition, sharesOwned, redeemRequest.Amount, cfg)
+		if err != nil {
+			return err
+		}
+
+		if sharesToSell == 0 {
+			return errors.New("not enough value to sell at least one share")
+		}
+
+		bet := models.Bet{
+			Username: user.Username,
+			MarketID: redeemRequest.MarketID,
+			Amount:   -sharesToSell, // negative share amount means sale
+			// Keep requested credits so historical dust can be reconstructed.
+			RequestedAmount: requestedCredits,
+			PlacedAt:        time.Now(),
+			Outcome:         redeemRequest.Outcome,
+		}
+
+		if err := betutils.ValidateSale(tx, &bet); err != nil {
+			return err
+		}
+
+		// credit the user's balance AND record the sale bet atomically.
 		if err := usershandlers.ApplyTransactionToUser(user.Username, actualSaleValue, tx, usershandlers.TransactionSale, usershandlers.BalanceTypeVirtual); err != nil {
 			return err
 		}

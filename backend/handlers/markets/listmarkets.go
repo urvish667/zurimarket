@@ -18,7 +18,8 @@ import (
 
 // ListMarketsResponse defines the structure for the list markets response
 type ListMarketsResponse struct {
-	Markets []MarketOverview `json:"markets"`
+	Markets    []MarketOverview `json:"markets"`
+	Pagination util.Pagination  `json:"pagination"`
 }
 
 type MarketOverview struct {
@@ -37,8 +38,11 @@ func ListMarketsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	page, limit := util.GetPaginationParams(r)
 	db := util.GetDB()
-	markets, err := ListMarkets(db)
+
+	var markets []models.Market
+	totalRows, err := util.Paginate(db.Order("created_at DESC"), page, limit, &markets)
 	if err != nil {
 		http.Error(w, "Error fetching markets", http.StatusInternalServerError)
 		return
@@ -47,10 +51,18 @@ func ListMarketsHandler(w http.ResponseWriter, r *http.Request) {
 	var marketOverviews []MarketOverview
 	for _, market := range markets {
 		bets := tradingdata.GetBetsForMarket(db, uint(market.ID))
-		probabilityChanges := wpam.CalculateMarketProbabilitiesWPAM(market.CreatedAt, bets)
+		
+		// Handle case with no bets for probability calculation
+		lastProbability := 0.5 // Default
+		if len(bets) > 0 {
+			probabilityChanges := wpam.CalculateMarketProbabilitiesWPAM(market.CreatedAt, bets)
+			if len(probabilityChanges) > 0 {
+				lastProbability = probabilityChanges[len(probabilityChanges)-1].Probability
+			}
+		}
+
 		numUsers := models.GetNumMarketUsers(bets)
 		marketVolume := marketmath.GetMarketVolume(bets)
-		lastProbability := probabilityChanges[len(probabilityChanges)-1].Probability
 
 		creatorInfo := publicuser.GetPublicUserInfo(db, market.CreatorUsername)
 
@@ -73,7 +85,8 @@ func ListMarketsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := ListMarketsResponse{
-		Markets: marketOverviews,
+		Markets:    marketOverviews,
+		Pagination: util.GetPaginationMetadata(totalRows, page, limit),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

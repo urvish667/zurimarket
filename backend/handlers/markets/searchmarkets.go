@@ -24,7 +24,7 @@ type SearchMarketsResponse struct {
 	FallbackResults []MarketOverview `json:"fallbackResults"`
 	Query           string           `json:"query"`
 	PrimaryStatus   string           `json:"primaryStatus"`
-	PrimaryCount    int              `json:"primaryCount"`
+	Pagination      util.Pagination  `json:"pagination"`
 	FallbackCount   int              `json:"fallbackCount"`
 	TotalCount      int              `json:"totalCount"`
 	FallbackUsed    bool             `json:"fallbackUsed"`
@@ -43,7 +43,7 @@ func SearchMarketsHandler(w http.ResponseWriter, r *http.Request) {
 	// Get and validate query parameters
 	query := r.URL.Query().Get("query")
 	status := r.URL.Query().Get("status")
-	limitStr := r.URL.Query().Get("limit")
+	page, limit := util.GetPaginationParams(r)
 
 	// Validate and sanitize input
 	if query == "" {
@@ -70,15 +70,9 @@ func SearchMarketsHandler(w http.ResponseWriter, r *http.Request) {
 	if status == "" {
 		status = "all"
 	}
-	limit := 20
-	if limitStr != "" {
-		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 && parsedLimit <= 50 {
-			limit = parsedLimit
-		}
-	}
 
 	// Perform the search
-	searchResponse, err := SearchMarkets(db, sanitizedQuery, status, limit)
+	searchResponse, err := SearchMarkets(db, sanitizedQuery, status, page, limit)
 	if err != nil {
 		log.Printf("Error searching markets: %v", err)
 		http.Error(w, "Error searching markets", http.StatusInternalServerError)
@@ -93,8 +87,8 @@ func SearchMarketsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // SearchMarkets performs the actual search logic with fallback
-func SearchMarkets(db *gorm.DB, query, status string, limit int) (*SearchMarketsResponse, error) {
-	log.Printf("SearchMarkets: Searching for '%s' in status '%s'", query, status)
+func SearchMarkets(db *gorm.DB, query, status string, page, limit int) (*SearchMarketsResponse, error) {
+	log.Printf("SearchMarkets: Searching for '%s' in status '%s', page %d, limit %d", query, status, page, limit)
 
 	// Get the appropriate filter function for the primary search
 	var primaryFilter MarketFilterFunc
@@ -117,8 +111,12 @@ func SearchMarkets(db *gorm.DB, query, status string, limit int) (*SearchMarkets
 		statusName = "all"
 	}
 
-	// Search within the primary status
-	primaryResults, err := searchMarketsWithFilter(db, query, primaryFilter, limit)
+	// Search within the primary status using pagination
+	searchTerm := "%" + strings.ToLower(query) + "%"
+	baseQuery := primaryFilter(db).Where("LOWER(question_title) LIKE ? OR LOWER(description) LIKE ?", searchTerm, searchTerm)
+
+	var primaryResults []models.Market
+	totalRows, err := util.Paginate(baseQuery.Order("created_at DESC"), page, limit, &primaryResults)
 	if err != nil {
 		return nil, err
 	}
@@ -133,21 +131,23 @@ func SearchMarkets(db *gorm.DB, query, status string, limit int) (*SearchMarkets
 		FallbackResults: []MarketOverview{},
 		Query:           query,
 		PrimaryStatus:   statusName,
-		PrimaryCount:    len(primaryOverviews),
+		Pagination:      util.GetPaginationMetadata(totalRows, page, limit),
 		FallbackCount:   0,
-		TotalCount:      len(primaryOverviews),
+		TotalCount:      int(totalRows),
 		FallbackUsed:    false,
 	}
 
-	// If we have 5 or fewer primary results and we're not already searching "all", search all markets
-	if len(primaryOverviews) <= 5 && status != "all" {
-		log.Printf("SearchMarkets: Primary results ≤5, searching all markets for fallback")
+	// Fallback logic: only if we are on the first page, have few results, and not already searching "all"
+	if page == 1 && len(primaryOverviews) <= 5 && status != "all" {
+		log.Printf("SearchMarkets: Primary results ≤5 on page 1, searching all markets for fallback")
 
-		// Search all markets
-		allFilter := func(db *gorm.DB) *gorm.DB {
-			return db // No status filter
-		}
-		allResults, err := searchMarketsWithFilter(db, query, allFilter, limit*2) // Get more for filtering
+		// Search all markets for fallback
+		searchTerm := "%" + strings.ToLower(query) + "%"
+		var allResults []models.Market
+		err := db.Where("LOWER(question_title) LIKE ? OR LOWER(description) LIKE ?", searchTerm, searchTerm).
+			Order("created_at DESC").
+			Limit(limit * 2).
+			Find(&allResults).Error
 		if err != nil {
 			return nil, err
 		}
@@ -176,7 +176,7 @@ func SearchMarkets(db *gorm.DB, query, status string, limit int) (*SearchMarkets
 
 			response.FallbackResults = fallbackOverviews
 			response.FallbackCount = len(fallbackOverviews)
-			response.TotalCount = response.PrimaryCount + response.FallbackCount
+			response.TotalCount = response.TotalCount + response.FallbackCount
 			response.FallbackUsed = true
 		}
 	}
@@ -184,37 +184,6 @@ func SearchMarkets(db *gorm.DB, query, status string, limit int) (*SearchMarkets
 	return response, nil
 }
 
-// searchMarketsWithFilter performs the database search with the given filter
-func searchMarketsWithFilter(db *gorm.DB, searchQuery string, filterFunc MarketFilterFunc, limit int) ([]models.Market, error) {
-	var markets []models.Market
-
-	// Create the search query - search in both title and description
-	searchTerm := "%" + strings.ToLower(searchQuery) + "%"
-	log.Printf("searchMarketsWithFilter: searchTerm = '%s'", searchTerm)
-
-	// Build the query with filter
-	query := filterFunc(db).Where("LOWER(question_title) LIKE ? OR LOWER(description) LIKE ?", searchTerm, searchTerm).
-		Order("created_at DESC").
-		Limit(limit)
-
-	// Log the SQL query for debugging
-	log.Printf("searchMarketsWithFilter: Executing search query...")
-
-	// Search in both question_title and description fields
-	result := query.Find(&markets)
-
-	if result.Error != nil {
-		log.Printf("Error in searchMarketsWithFilter: %v", result.Error)
-		return nil, result.Error
-	}
-
-	log.Printf("searchMarketsWithFilter: Found %d markets", len(markets))
-	for i, market := range markets {
-		log.Printf("  Market %d: ID=%d, Title='%s'", i+1, market.ID, market.QuestionTitle)
-	}
-
-	return markets, nil
-}
 
 // convertToMarketOverviews converts market models to MarketOverview structs
 func convertToMarketOverviews(db *gorm.DB, markets []models.Market) ([]MarketOverview, error) {

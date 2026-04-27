@@ -113,7 +113,27 @@ func buildCORSFromEnv() *cors.Cors {
 	if !getBoolEnv("CORS_ENABLED", true) {
 		return nil
 	}
-	origins := getListEnv("CORS_ALLOW_ORIGINS", "")
+
+	appEnv := os.Getenv("APP_ENV")
+	domainURL := os.Getenv("DOMAIN_URL")
+
+	// Default to DOMAIN_URL if origins is not set
+	defaultOrigins := ""
+	if domainURL != "" {
+		defaultOrigins = domainURL
+		// If it doesn't have a protocol, add https:// as a default for prod
+		if !strings.HasPrefix(defaultOrigins, "http://") && !strings.HasPrefix(defaultOrigins, "https://") {
+			defaultOrigins = "https://" + defaultOrigins
+		}
+	}
+
+	origins := getListEnv("CORS_ALLOW_ORIGINS", defaultOrigins)
+
+	// If still empty and in production, we should be cautious
+	if len(origins) == 0 && appEnv == "production" {
+		log.Printf("WARNING: CORS_ALLOW_ORIGINS not set in production. CORS might be too restrictive or default to wildcard depending on environment.")
+	}
+
 	methods := getListEnv("CORS_ALLOW_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 	headers := getListEnv("CORS_ALLOW_HEADERS", "Content-Type,Authorization")
 	expose := getListEnv("CORS_EXPOSE_HEADERS", "")

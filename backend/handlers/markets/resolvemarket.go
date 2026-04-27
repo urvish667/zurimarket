@@ -3,6 +3,7 @@ package marketshandlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"socialpredict/handlers/math/payout"
@@ -110,22 +111,32 @@ func ResolveMarketHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		market.ResolutionResult = finalOutcome
+		// Use a transaction for finalization and payout distribution
+		txErr := db.Transaction(func(tx *gorm.DB) error {
+			// Validate the resolution outcome within the transaction
+			if finalOutcome != "" && !isValidResolutionOutcome(tx, &market, finalOutcome) {
+				return errors.New("invalid resolution outcome")
+			}
 
-		adminID := user.ID
-		market.Status = models.MarketStatusFinalized
-		market.IsResolved = true
-		market.ResolvedBy = &adminID
-		market.FinalResolutionDateTime = time.Now()
+			market.ResolutionResult = finalOutcome
+			adminID := user.ID
+			market.Status = models.MarketStatusFinalized
+			market.IsResolved = true
+			market.ResolvedBy = &adminID
+			market.FinalResolutionDateTime = time.Now()
 
-		if err := db.Save(&market).Error; err != nil {
-			http.Error(w, "Error saving market resolution: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
+			if err := tx.Save(&market).Error; err != nil {
+				return fmt.Errorf("error saving market resolution: %w", err)
+			}
 
-		err = payout.DistributePayoutsWithRefund(&market, db)
-		if err != nil {
-			http.Error(w, "Error distributing payouts: "+err.Error(), http.StatusInternalServerError)
+			if err := payout.DistributePayoutsWithRefund(&market, tx); err != nil {
+				return fmt.Errorf("error distributing payouts: %w", err)
+			}
+			return nil
+		})
+
+		if txErr != nil {
+			http.Error(w, txErr.Error(), http.StatusInternalServerError)
 			return
 		}
 

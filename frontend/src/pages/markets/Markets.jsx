@@ -4,48 +4,70 @@ import MarketsByStatusTable from '../../components/tables/MarketsByStatusTable';
 import GlobalSearchBar from '../../components/search/GlobalSearchBar';
 import SearchResultsTable from '../../components/tables/SearchResultsTable';
 import { TAB_TO_STATUS } from '../../utils/statusMap';
+import Pagination from '../../components/common/Pagination';
 
 function Markets() {
     const [searchResults, setSearchResults] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
     const [activeTab, setActiveTab] = useState('Active');
+    const [searchPage, setSearchPage] = useState(1);
 
     const handleSearchResults = (results) => {
         setSearchResults(results);
     };
 
+    const handleSearchPageChange = (newPage) => {
+        setSearchPage(newPage);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const handleTabChange = (tabLabel) => {
         setActiveTab(tabLabel);
-        // Don't clear search when switching tabs - let GlobalSearchBar re-execute with new status
-        // The search will automatically re-execute due to currentStatus change in GlobalSearchBar
+        setSearchPage(1); // Reset search page when switching tabs
     };
 
     const tabsData = [
         { 
             label: 'Active', 
             content: isSearching ? 
-                <SearchResultsTable searchResults={searchResults} /> : 
+                <SearchResultsTable 
+                    searchResults={searchResults} 
+                    currentPage={searchPage} 
+                    onPageChange={handleSearchPageChange} 
+                /> : 
                 <MarketsByStatusTable status="active" />,
             onSelect: () => handleTabChange('Active')
         },
         { 
             label: 'Closed', 
             content: isSearching ? 
-                <SearchResultsTable searchResults={searchResults} /> : 
+                <SearchResultsTable 
+                    searchResults={searchResults} 
+                    currentPage={searchPage} 
+                    onPageChange={handleSearchPageChange} 
+                /> : 
                 <MarketsByStatusTable status="closed" />,
             onSelect: () => handleTabChange('Closed')
         },
         { 
             label: 'Resolved', 
             content: isSearching ? 
-                <SearchResultsTable searchResults={searchResults} /> : 
+                <SearchResultsTable 
+                    searchResults={searchResults} 
+                    currentPage={searchPage} 
+                    onPageChange={handleSearchPageChange} 
+                /> : 
                 <MarketsByStatusTable status="resolved" />,
             onSelect: () => handleTabChange('Resolved')
         },
         { 
             label: 'All', 
             content: isSearching ? 
-                <SearchResultsTable searchResults={searchResults} /> : 
+                <SearchResultsTable 
+                    searchResults={searchResults} 
+                    currentPage={searchPage} 
+                    onPageChange={handleSearchPageChange} 
+                /> : 
                 <MarketsByStatusTable status="all" />,
             onSelect: () => handleTabChange('All')
         },
@@ -64,6 +86,7 @@ function Markets() {
                         currentStatus={TAB_TO_STATUS[activeTab]}
                         isSearching={isSearching}
                         setIsSearching={setIsSearching}
+                        page={searchPage}
                     />
                     
                     {/* Tabs with Content */}

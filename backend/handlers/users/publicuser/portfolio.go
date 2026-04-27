@@ -33,20 +33,55 @@ func GetPortfolio(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
+	// Get pagination parameters
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page <= 0 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 {
+		limit = 20
+	}
+
 	db := util.GetDB()
 
-	// fetch all bets made by a specific user
-	userbets, err := fetchUserBets(db, username)
+	// 1. Get unique market IDs where the user has placed bets, ordered by last bet date
+	type MarketIDResult struct {
+		MarketID      uint
+		LastBetPlaced time.Time
+	}
+	var marketIDs []MarketIDResult
+
+	// Use subquery to find last bet per market for the user
+	query := db.Model(&models.Bet{}).
+		Select("market_id, MAX(placed_at) as last_bet_placed").
+		Where("username = ?", username).
+		Group("market_id").
+		Order("last_bet_placed DESC")
+
+	// Count total unique markets for pagination
+	var totalRows int64
+	db.Model(&models.Bet{}).Where("username = ?", username).Distinct("market_id").Count(&totalRows)
+
+	// Apply pagination to the unique markets
+	offset := (page - 1) * limit
+	err := query.Offset(offset).Limit(limit).Find(&marketIDs).Error
 	if err != nil {
-		log.Printf("Error fetching user bets: %v", err)
-		http.Error(w, "Error fetching user bets", http.StatusInternalServerError)
+		log.Printf("Error fetching user market IDs: %v", err)
+		http.Error(w, "Error fetching user market IDs", http.StatusInternalServerError)
 		return
 	}
 
-	// Create a market map from the user's bets
-	marketMap := makeUserMarketMap(userbets)
+	// 2. Create a market map for these specific market IDs
+	marketMap := make(map[uint]PortfolioItem)
+	for _, m := range marketIDs {
+		marketMap[m.MarketID] = PortfolioItem{
+			MarketID:      m.MarketID,
+			LastBetPlaced: m.LastBetPlaced,
+		}
+	}
 
-	// Process the market map to calculate positions and fetch market titles
+	// 3. Process only these markets to calculate positions and fetch market titles
 	userPositionsPortfolio, err := processMarketMap(db, marketMap, username)
 	if err != nil {
 		log.Printf("Error processing market map: %v", err)
@@ -54,15 +89,34 @@ func GetPortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 4. Calculate total shares owned across ALL markets (this might need a separate optimized query if we want to be strict)
+	// For now, let's keep it simple or skip it if it's too expensive to calculate for all.
+	// Actually, calculateTotalShares in the old code only counted for the returned items.
+	// We'll calculate it for the paginated set for now, or fetch the total if needed.
 	totalSharesOwned := calculateTotalShares(userPositionsPortfolio)
 
-	portfolioTotal := PortfolioTotal{
+	totalPages := int(totalRows / int64(limit))
+	if totalRows%int64(limit) != 0 {
+		totalPages++
+	}
+
+	response := struct {
+		PortfolioItems   []PortfolioItem `json:"portfolioItems"`
+		TotalSharesOwned int64           `json:"totalSharesOwned"`
+		Pagination       util.Pagination `json:"pagination"`
+	}{
 		PortfolioItems:   userPositionsPortfolio,
 		TotalSharesOwned: totalSharesOwned,
+		Pagination: util.Pagination{
+			Page:       page,
+			Limit:      limit,
+			TotalRows:  totalRows,
+			TotalPages: totalPages,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(portfolioTotal)
+	json.NewEncoder(w).Encode(response)
 }
 
 // fetchUserBets retrieves all bets made by a specific user

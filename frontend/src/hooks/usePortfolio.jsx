@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { useAuth } from '../helpers/AuthContent';
 
-const usePortfolio = (username) => {
-  const [portfolio, setPortfolio] = useState({ portfolioItems: [] });
+const usePortfolio = (username, page = 1, limit = 20) => {
+  const [portfolio, setPortfolio] = useState({ portfolioItems: [], pagination: null, totalSharesOwned: 0 });
   const [portfolioLoading, setPortfolioLoading] = useState(true);
   const [portfolioError, setPortfolioError] = useState(null);
   const { token } = useAuth();
@@ -17,12 +17,16 @@ const usePortfolio = (username) => {
           headers['Content-Type'] = 'application/json';
         }
 
-        const response = await fetch(`${API_URL}/v0/portfolio/${username}`, { headers });
+        const response = await fetch(`${API_URL}/v0/portfolio/${username}?page=${page}&limit=${limit}`, { headers });
         if (!response.ok) {
           throw new Error('Failed to fetch portfolio');
         }
         const data = await response.json();
-        setPortfolio({ ...data, portfolioItems: data.portfolioItems || [] });
+        setPortfolio({ 
+          portfolioItems: data.portfolioItems || [], 
+          pagination: data.pagination,
+          totalSharesOwned: data.totalSharesOwned || 0
+        });
       } catch (error) {
         console.error('Error fetching portfolio:', error);
         setPortfolioError(error.toString());
@@ -34,7 +38,7 @@ const usePortfolio = (username) => {
     if (username && token) {
       fetchPortfolio();
     }
-  }, [username, token]);
+  }, [username, token, page, limit]);
 
   return { portfolio, portfolioLoading, portfolioError };
 };

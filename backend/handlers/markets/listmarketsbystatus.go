@@ -19,9 +19,9 @@ import (
 
 // ListMarketsStatusResponse defines the structure for filtered market responses
 type ListMarketsStatusResponse struct {
-	Markets []MarketOverview `json:"markets"`
-	Status  string           `json:"status"`
-	Count   int              `json:"count"`
+	Markets    []MarketOverview `json:"markets"`
+	Status     string           `json:"status"`
+	Pagination util.Pagination  `json:"pagination"`
 }
 
 // MarketFilterFunc defines the filtering logic for markets
@@ -36,15 +36,11 @@ func ListMarketsByStatusHandler(filterFunc MarketFilterFunc, statusName string) 
 			return
 		}
 
-		limit := 100 // Default limit
-		if lStr := r.URL.Query().Get("limit"); lStr != "" {
-			if l, err := strconv.Atoi(lStr); err == nil && l > 0 {
-				limit = l
-			}
-		}
-
+		page, limit := util.GetPaginationParams(r)
 		db := util.GetDB()
-		markets, err := ListMarketsByStatus(db, filterFunc, limit)
+
+		var markets []models.Market
+		totalRows, err := util.Paginate(filterFunc(db).Order("created_at DESC"), page, limit, &markets)
 		if err != nil {
 			log.Printf("Error fetching markets for status %s: %v", statusName, err)
 			http.Error(w, "Error fetching markets", http.StatusInternalServerError)
@@ -89,9 +85,9 @@ func ListMarketsByStatusHandler(filterFunc MarketFilterFunc, statusName string) 
 		}
 
 		response := ListMarketsStatusResponse{
-			Markets: marketOverviews,
-			Status:  statusName,
-			Count:   len(marketOverviews),
+			Markets:    marketOverviews,
+			Status:     statusName,
+			Pagination: util.GetPaginationMetadata(totalRows, page, limit),
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -100,23 +96,6 @@ func ListMarketsByStatusHandler(filterFunc MarketFilterFunc, statusName string) 
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-}
-
-// ListMarketsByStatus fetches markets from the database using the provided filter function and limit
-func ListMarketsByStatus(db *gorm.DB, filterFunc MarketFilterFunc, limit ...int) ([]models.Market, error) {
-	var markets []models.Market
-	maxResults := 100
-	if len(limit) > 0 && limit[0] > 0 {
-		maxResults = limit[0]
-	}
-	query := filterFunc(db).Order("created_at DESC").Limit(maxResults)
-	result := query.Find(&markets)
-	if result.Error != nil {
-		log.Printf("Error fetching filtered markets: %v", result.Error)
-		return nil, result.Error
-	}
-
-	return markets, nil
 }
 
 // ActiveMarketsFilter returns markets that are not resolved and have not yet reached their resolution date

@@ -244,32 +244,21 @@ func CreateMarketHandler(loadEconConfig setup.EconConfigLoader) func(http.Respon
 		}
 		newMarket.Category = validatedCategory
 
-		if err = util.CheckUserIsReal(db, newMarket.CreatorUsername); err != nil {
-			if err.Error() == "creator user not found" {
-				http.Error(w, err.Error(), http.StatusNotFound)
-			} else {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-			return
-		}
-
-		appConfig := loadEconConfig()
-
-		if err = validateMarketResolutionTime(newMarket.ResolutionDateTime, appConfig); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		marketCreateFee := appConfig.Economics.MarketIncentives.CreateMarketCost
-		maximumDebtAllowed := appConfig.Economics.User.MaximumDebtAllowed
-
-		if user.VirtualBalance-marketCreateFee < -maximumDebtAllowed {
-			http.Error(w, "Insufficient balance", http.StatusBadRequest)
-			return
-		}
-
-		// Atomically deduct the fee and create the market + options in a single transaction.
+		// Atomically check user, deduct the fee and create the market + options in a single transaction.
 		txErr := db.Transaction(func(tx *gorm.DB) error {
+			if err = util.CheckUserIsReal(tx, newMarket.CreatorUsername); err != nil {
+				return err
+			}
+
+			appConfig := loadEconConfig()
+			if err = validateMarketResolutionTime(newMarket.ResolutionDateTime, appConfig); err != nil {
+				return err
+			}
+
+			marketCreateFee := appConfig.Economics.MarketIncentives.CreateMarketCost
+			maximumDebtAllowed := appConfig.Economics.User.MaximumDebtAllowed
+
+			// Atomic conditional deduction:
 			res := tx.Model(&models.User{}).
 				Where("username = ? AND virtual_balance - ? >= ?", user.Username, marketCreateFee, -maximumDebtAllowed).
 				UpdateColumn("virtual_balance", gorm.Expr("virtual_balance - ?", marketCreateFee))
@@ -279,6 +268,7 @@ func CreateMarketHandler(loadEconConfig setup.EconConfigLoader) func(http.Respon
 			if res.RowsAffected == 0 {
 				return fmt.Errorf("insufficient balance")
 			}
+
 			if err := tx.Create(&newMarket).Error; err != nil {
 				log.Printf("Error creating new market: %v", err)
 				return fmt.Errorf("error creating new market")

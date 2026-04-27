@@ -4,10 +4,11 @@ import { API_URL } from '../config';
  * Search markets by query and status
  * @param {string} query - Search query
  * @param {string} status - Market status filter ('all', 'active', 'closed', 'resolved')
- * @param {number} limit - Maximum number of results (optional, defaults to 20)
+ * @param {number} page - Page number (optional, defaults to 1)
+ * @param {number} limit - Maximum number of results per page (optional, defaults to 20)
  * @returns {Promise<Object>} Search results object
  */
-export const searchMarkets = async (query, status = 'all', limit = 20) => {
+export const searchMarkets = async (query, status = 'all', page = 1, limit = 20) => {
     if (!query?.trim()) {
         throw new Error('Search query is required');
     }
@@ -15,6 +16,7 @@ export const searchMarkets = async (query, status = 'all', limit = 20) => {
     const params = new URLSearchParams({
         query: query.trim(),
         status: status,
+        page: page.toString(),
         limit: limit.toString()
     });
 
@@ -31,14 +33,21 @@ export const searchMarkets = async (query, status = 'all', limit = 20) => {
 /**
  * Get markets by status (existing endpoint)
  * @param {string} status - Market status ('active', 'closed', 'resolved', 'all')
+ * @param {number} page - Page number (optional, defaults to 1)
+ * @param {number} limit - Maximum number of results per page (optional, defaults to 20)
  * @returns {Promise<Object>} Markets data
  */
-export const getMarketsByStatus = async (status = 'all') => {
-    const endpoint = status === 'all'
+export const getMarketsByStatus = async (status = 'all', page = 1, limit = 20) => {
+    const baseUrl = status === 'all'
         ? `${API_URL}/v0/markets`
         : `${API_URL}/v0/markets/${status}`;
 
-    const response = await fetch(endpoint);
+    const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+    });
+
+    const response = await fetch(`${baseUrl}?${params}`);
 
     if (!response.ok) {
         throw new Error(`Failed to fetch ${status} markets: ${response.status}`);

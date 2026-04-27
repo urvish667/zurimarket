@@ -4,6 +4,7 @@ import { API_URL } from '../../config';
 import SiteButton from '../../components/buttons/SiteButtons';
 import LoadingSpinner from '../../components/loaders/LoadingSpinner';
 import SiteTabs from '../../components/tabs/SiteTabs';
+import Pagination from '../../components/common/Pagination';
 import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
 
 // MetricCard Component
@@ -74,6 +75,8 @@ const Stats = () => {
   const [globalLeaderboard, setGlobalLeaderboard] = useState(null);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState(null);
+  const [leaderboardPage, setLeaderboardPage] = useState(1);
+  const [leaderboardPagination, setLeaderboardPagination] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -125,14 +128,16 @@ const Stats = () => {
     }
   };
 
-  const fetchGlobalLeaderboard = async () => {
+  const fetchGlobalLeaderboard = async (page = 1) => {
     setLeaderboardLoading(true);
     setLeaderboardError(null);
     try {
-      const response = await fetch(`${API_URL}/v0/global/leaderboard`, {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/v0/global/leaderboard?page=${page}&limit=20`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       });
 
@@ -141,13 +146,18 @@ const Stats = () => {
       }
 
       const data = await response.json();
-      setGlobalLeaderboard(data);
+      setGlobalLeaderboard(data.leaderboard);
+      setLeaderboardPagination(data.pagination);
     } catch (err) {
       setLeaderboardError(err.message);
     } finally {
       setLeaderboardLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchGlobalLeaderboard(leaderboardPage);
+  }, [leaderboardPage]);
 
   const toggleFormula = (key) => {
     setShowFormulas(prev => ({
@@ -417,7 +427,7 @@ const Stats = () => {
           Global Leaderboard <span className="text-warning-orange text-lg">(Beta)</span>
         </h2>
         <SiteButton
-          onClick={fetchGlobalLeaderboard}
+          onClick={() => fetchGlobalLeaderboard(1)}
           isSelected={false}
           disabled={leaderboardLoading}
           className="bg-info-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
@@ -461,77 +471,89 @@ const Stats = () => {
       )}
 
       {globalLeaderboard && globalLeaderboard.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-600">
-                <th className="text-left py-3 px-4 text-gray-300 font-medium">Rank</th>
-                <th className="text-left py-3 px-4 text-gray-300 font-medium">User</th>
-                <th className="text-left py-3 px-4 text-gray-300 font-medium">Total Profit</th>
-                <th className="text-left py-3 px-4 text-gray-300 font-medium">Current Value</th>
-                <th className="text-left py-3 px-4 text-gray-300 font-medium">Total Spent</th>
-                <th className="text-left py-3 px-4 text-gray-300 font-medium">Active Markets</th>
-                <th className="text-left py-3 px-4 text-gray-300 font-medium">Resolved Markets</th>
-              </tr>
-            </thead>
-            <tbody>
-              {globalLeaderboard.map((user, index) => {
-                const getRankDisplay = (rank) => {
-                  if (rank === 1) return '🥇';
-                  if (rank === 2) return '🥈';
-                  if (rank === 3) return '🥉';
-                  return `#${rank}`;
-                };
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-600">
+                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Rank</th>
+                  <th className="text-left py-3 px-4 text-gray-300 font-medium">User</th>
+                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Total Profit</th>
+                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Current Value</th>
+                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Total Spent</th>
+                  <th className="text-left py-3 px-4 text-gray-300 font-medium text-center">Active</th>
+                  <th className="text-left py-3 px-4 text-gray-300 font-medium text-center">Resolved</th>
+                </tr>
+              </thead>
+              <tbody>
+                {globalLeaderboard.map((user) => {
+                  const getRankDisplay = (rank) => {
+                    if (rank === 1) return '🥇';
+                    if (rank === 2) return '🥈';
+                    if (rank === 3) return '🥉';
+                    return `#${rank}`;
+                  };
 
-                const getProfitColor = (profit) => {
-                  if (profit > 0) return 'text-green-400';
-                  if (profit < 0) return 'text-red-400';
-                  return 'text-gray-300';
-                };
+                  const getProfitColor = (profit) => {
+                    if (profit > 0) return 'text-green-400';
+                    if (profit < 0) return 'text-red-400';
+                    return 'text-gray-300';
+                  };
 
-                return (
-                  <tr key={user.username} className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
-                    <td className="py-3 px-4 text-white font-semibold">
-                      {getRankDisplay(user.rank)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <Link
-                        to={`/user/${user.username}`}
-                        className="text-blue-400 font-medium hover:text-blue-300 transition-colors"
-                      >
-                        {user.username}
-                      </Link>
-                    </td>
-                    <td className={`py-3 px-4 font-semibold ${getProfitColor(user.totalProfit)}`}>
-                      <div className="flex items-center gap-1">
-                        {!isStatus && <CoinIcon size="text-xs" className="text-white/20" />}
-                        {user.totalProfit >= 0 ? '+' : ''}{formatCurrency(user.totalProfit)}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-300">
-                      <div className="flex items-center gap-1">
-                        <CoinIcon size="text-xs" className="text-white/10" />
-                        {formatCurrency(user.totalCurrentValue)}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-300">
-                      <div className="flex items-center gap-1">
-                        <CoinIcon size="text-xs" className="text-white/10" />
-                        {formatCurrency(user.totalSpent)}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-300 text-center">
-                      {user.activeMarkets}
-                    </td>
-                    <td className="py-3 px-4 text-gray-300 text-center">
-                      {user.resolvedMarkets}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  return (
+                    <tr key={user.username} className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
+                      <td className="py-3 px-4 text-white font-semibold">
+                        {getRankDisplay(user.rank)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Link
+                          to={`/user/${user.username}`}
+                          className="text-blue-400 font-medium hover:text-blue-300 transition-colors"
+                        >
+                          {user.username}
+                        </Link>
+                      </td>
+                      <td className={`py-3 px-4 font-semibold ${getProfitColor(user.totalProfit)}`}>
+                        <div className="flex items-center gap-1">
+                          <CoinIcon size="text-xs" className="text-white/20" />
+                          {user.totalProfit >= 0 ? '+' : ''}{formatCurrency(user.totalProfit)}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-300">
+                        <div className="flex items-center gap-1">
+                          <CoinIcon size="text-xs" className="text-white/10" />
+                          {formatCurrency(user.totalCurrentValue)}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-300">
+                        <div className="flex items-center gap-1">
+                          <CoinIcon size="text-xs" className="text-white/10" />
+                          {formatCurrency(user.totalSpent)}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-300 text-center">
+                        {user.activeMarkets}
+                      </td>
+                      <td className="py-3 px-4 text-gray-300 text-center">
+                        {user.resolvedMarkets}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {leaderboardPagination && (
+            <Pagination
+              currentPage={leaderboardPage}
+              totalPages={leaderboardPagination.totalPages}
+              onPageChange={(page) => setLeaderboardPage(page)}
+              totalRows={leaderboardPagination.totalRows}
+              limit={leaderboardPagination.limit}
+            />
+          )}
+        </>
       )}
 
       {globalLeaderboard && globalLeaderboard.length === 0 && (

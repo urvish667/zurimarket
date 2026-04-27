@@ -5,6 +5,8 @@ import { getMarketLabels } from '../../../../utils/labelMapping';
 
 const LeaderboardActivity = ({ marketId, market }) => {
     const [leaderboard, setLeaderboard] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pagination, setPagination] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -12,10 +14,11 @@ const LeaderboardActivity = ({ marketId, market }) => {
         const fetchLeaderboard = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`${API_URL}/v0/markets/leaderboard/${marketId}`);
+                const response = await fetch(`${API_URL}/v0/markets/leaderboard/${marketId}?page=${currentPage}&limit=10`);
                 if (response.ok) {
                     const data = await response.json();
-                    setLeaderboard(data);
+                    setLeaderboard(data.leaderboard || []);
+                    setPagination(data.pagination);
                 } else {
                     console.error('Error fetching leaderboard:', response.statusText);
                     setError('Failed to load leaderboard data');
@@ -31,7 +34,11 @@ const LeaderboardActivity = ({ marketId, market }) => {
         if (marketId) {
             fetchLeaderboard();
         }
-    }, [marketId]);
+    }, [marketId, currentPage]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
 
     const formatCurrency = (amount) => {
         return amount.toLocaleString();
@@ -169,6 +176,15 @@ const LeaderboardActivity = ({ marketId, market }) => {
                     </div>
                 </div>
             ))}
+            {pagination && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={pagination.totalPages}
+                    onPageChange={handlePageChange}
+                    totalRows={pagination.totalRows}
+                    limit={pagination.limit}
+                />
+            )}
         </div>
     );
 };

@@ -3,15 +3,21 @@ import { useAuth } from '../../helpers/AuthContent';
 import useUserData from '../../hooks/useUserData';
 import usePortfolio from '../../hooks/usePortfolio';
 import LoadingSpinner from '../../components/loaders/LoadingSpinner';
+import Pagination from '../../components/common/Pagination';
 
 const Portfolio = () => {
     const { username } = useAuth();
+    const [currentPage, setCurrentPage] = useState(1);
     const { userData, userLoading, userError } = useUserData(username, true);
-    const { portfolio, portfolioLoading, portfolioError } = usePortfolio(username);
+    const { portfolio, portfolioLoading, portfolioError } = usePortfolio(username, currentPage, 20);
     const [activeTab, setActiveTab] = useState('positions');
 
     if (userLoading || portfolioLoading) return <LoadingSpinner />;
     if (userError || portfolioError) return <div className="p-8 text-red-500">Error loading portfolio data.</div>;
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount / 100);
@@ -21,7 +27,7 @@ const Portfolio = () => {
     const portfolioValue = (portfolio?.totalSharesOwned || 0) * 100; // Mock calculation
     const totalProfitLoss = 0; // TBD logic
     const winRate = "68.4"; // TBD logic
-    const transactionCount = portfolio?.portfolioItems?.length || 0;
+    const transactionCount = portfolio?.pagination?.totalRows || 0;
 
     return (
         <div className="min-h-screen bg-[#0e0e0e] text-white font-body antialiased pb-20">
@@ -124,6 +130,17 @@ const Portfolio = () => {
                             </tbody>
                         </table>
                     </div>
+                    {portfolio?.pagination && portfolio.pagination.totalPages > 1 && (
+                        <div className="border-t border-[#484848]/15 bg-[#131313]">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={portfolio.pagination.totalPages}
+                                onPageChange={handlePageChange}
+                                totalRows={portfolio.pagination.totalRows}
+                                limit={portfolio.pagination.limit}
+                            />
+                        </div>
+                    )}
                 </section>
             </main>
         </div>

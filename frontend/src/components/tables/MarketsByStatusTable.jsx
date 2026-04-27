@@ -7,6 +7,8 @@ import LoadingSpinner from '../loaders/LoadingSpinner';
 import ExpandableLink from '../utils/ExpandableLink';
 import { useAuth } from '../../helpers/AuthContent';
 import { getResolvedText, getResultCssClass } from '../../utils/labelMapping';
+import { getMarketsByStatus } from '../../api/marketsApi';
+import Pagination from '../common/Pagination';
 
 const TableHeader = () => (
   <thead className='bg-gray-900'>
@@ -94,7 +96,14 @@ function MarketsByStatusTable({ status }) {
   const [marketsData, setMarketsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { token } = useAuth(); // Get auth token
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    // Reset page when status changes
+    setCurrentPage(1);
+  }, [status]);
 
   useEffect(() => {
     const fetchMarkets = async () => {
@@ -102,34 +111,9 @@ function MarketsByStatusTable({ status }) {
       setError('');
 
       try {
-        const endpoint = status === 'all'
-          ? `${API_URL}/v0/markets`
-          : `${API_URL}/v0/markets/${status}`;
-
-        // Add Authorization header since these routes are protected
-        const headers = {
-          'Content-Type': 'application/json',
-        };
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const response = await fetch(endpoint, { headers });
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error(`Unauthorized: Please log in to view ${status} markets`);
-          }
-          throw new Error(`Failed to fetch ${status} markets (Status: ${response.status})`);
-        }
-
-        const data = await response.json();
-
-        // Handle different response structures
-        if (status === 'all') {
-          setMarketsData(data.markets || []);
-        } else {
-          setMarketsData(data.markets || []);
-        }
+        const data = await getMarketsByStatus(status, currentPage, 20);
+        setMarketsData(data.markets || []);
+        setPagination(data.pagination);
       } catch (error) {
         console.error(`Error fetching ${status} market data:`, error);
         setError(error.toString());
@@ -139,7 +123,12 @@ function MarketsByStatusTable({ status }) {
     };
 
     fetchMarkets();
-  }, [status]);
+  }, [status, currentPage]);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (loading)
     return (
@@ -177,6 +166,16 @@ function MarketsByStatusTable({ status }) {
               </table>
             </div>
           </div>
+
+          {pagination && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={handlePageChange}
+              totalRows={pagination.totalRows}
+              limit={pagination.limit}
+            />
+          )}
         </>
       )}
     </div>
