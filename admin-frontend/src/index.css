@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-size: 100%;
+}
+
+:root {
+  --primary: #86d7ac;
+  --primary-container: #004e32;
+  --primary-fixed: #a2f4c7;
+  --on-primary: #003823;
+  --secondary: #ffffff;
+  --secondary-fixed: #CAF300;
+  --on-secondary: #2a3400;
+  --tertiary: #00e475;
+  --surface: #131313;
+  --surface-bright: #393939;
+  --surface-container-lowest: #0e0e0e;
+  --surface-container-low: #1c1b1b;
+  --surface-container: #201f1f;
+  --surface-container-high: #2a2a2a;
+  --surface-container-highest: #353534;
+  --on-surface: #e5e2e1;
+  --on-surface-variant: #bfc9c4;
+  --outline: #89938f;
+  --outline-variant: #3f4945;
+}
+
+.glass-panel {
+  background: rgba(33, 39, 37, 0.7);
+  backdrop-filter: blur(24px);
+}
+
+.primary-gradient {
+  background: linear-gradient(135deg, #ddff5c 0%, #caf300 100%);
+}
+
+body {
+  background-color: var(--surface);
+  color: #ffffff;
+  margin: 0;
+  font-family: 'Satoshi', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+@layer components {
+
+  /* Shared cells */
+  .sp-cell-username {
+    @apply min-w-0;
+  }
+
+  .sp-cell-num {
+    @apply text-right tabular-nums;
+  }
+
+  .sp-chip {
+    @apply px-2 py-0.5 rounded-full text-[10px] sm:text-xs bg-emerald-600/20;
+  }
+
+  .sp-subline {
+    @apply text-[10px] sm:text-xs text-slate-400;
+  }
+
+  .sp-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Bets */
+  .sp-grid-bets-header {
+    @apply hidden sm:grid grid-cols-5 gap-3 px-4 py-2 text-xs text-gray-400;
+  }
+
+  .sp-grid-bets-row {
+    @apply grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3 rounded-xl bg-slate-800 px-3 py-3;
+  }
+
+  /* Leaderboard */
+  .sp-grid-leaderboard-header {
+    @apply hidden sm:grid grid-cols-7 gap-3 px-4 py-2 text-xs text-gray-400;
+  }
+
+  .sp-grid-leaderboard-row {
+    @apply grid grid-cols-2 sm:grid-cols-7 gap-2 sm:gap-3 rounded-xl bg-slate-800 px-3 py-3;
+  }
+
+  /* Form Inputs */
+  .sp-input {
+    @apply w-full bg-[#131313] border border-[#484848]/15 rounded-none p-4 text-sm outline-none transition-all duration-200 text-white font-satoshi font-bold tracking-tight mb-0.5 uppercase;
+  }
+
+  .sp-input:focus {
+    @apply border-[#ddff5c]/50 bg-[#1a1a1a];
+    box-shadow: 0 0 0 1px rgba(221, 255, 92, 0.1);
+  }
+
+  .sp-input::placeholder {
+    @apply text-[#adaaaa] font-medium opacity-50;
+  }
+
+  select.sp-input {
+    @apply cursor-pointer appearance-none;
+  }
+
+  /* Optional smallest device tweaks (<=390px) */
+  @media (max-width: 390px) {
+    .sp-tight {
+      letter-spacing: 0;
+    }
+  }
+}
+
+
+@layer utilities {
+  .font-headline {
+    font-family: 'Space Grotesk', sans-serif !important;
+  }
+
+  .font-satoshi {
+    font-family: 'Satoshi', sans-serif !important;
+    letter-spacing: -0.01em;
+  }
+
+  .font-body {
+    font-family: 'Satoshi', sans-serif !important;
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}

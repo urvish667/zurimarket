@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Verify Your Mobile Number | Stadia Emerald</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Using Inter as a high-quality substitute for Satoshi as per standard Google Font availability for 'Satoshi-like' feel -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#bbffe3",
+                        "primary-fixed-dim": "#bde300",
+                        "on-primary-fixed": "#374400",
+                        "on-error": "#490006",
+                        "error-dim": "#d7383b",
+                        "on-tertiary-fixed-variant": "#006850",
+                        "on-secondary-fixed": "#00483c",
+                        "outline-variant": "#454947",
+                        "on-secondary-container": "#a1e1cf",
+                        "on-background": "#fafdfa",
+                        "error-container": "#9f0519",
+                        "on-primary-container": "#485800",
+                        "on-surface": "#fafdfa",
+                        "on-secondary-fixed-variant": "#266658",
+                        "inverse-on-surface": "#525654",
+                        "surface-container-high": "#1b211f",
+                        "secondary-dim": "#a1e1cf",
+                        "on-surface-variant": "#a8acaa",
+                        "surface-dim": "#0b0f0e",
+                        "tertiary-container": "#45fec9",
+                        "inverse-surface": "#f7faf8",
+                        "primary-dim": "#bde300",
+                        "on-tertiary-container": "#005d47",
+                        "secondary-fixed-dim": "#a1e1cf",
+                        "secondary": "#afefdd",
+                        "surface-tint": "#ddff5c",
+                        "outline": "#727675",
+                        "surface-container-lowest": "#000000",
+                        "surface-container": "#161b19",
+                        "tertiary-dim": "#1ee9b6",
+                        "tertiary-fixed": "#45fec9",
+                        "primary-container": "#caf300",
+                        "surface": "#0b0f0e",
+                        "on-tertiary": "#00674e",
+                        "error": "#ff716c",
+                        "surface-variant": "#212725",
+                        "surface-container-low": "#101413",
+                        "surface-container-highest": "#212725",
+                        "on-primary": "#4f6100",
+                        "on-primary-fixed-variant": "#516200",
+                        "primary": "#ddff5c",
+                        "inverse-primary": "#546600",
+                        "surface-bright": "#272d2c",
+                        "on-secondary": "#195c4e",
+                        "background": "#0b0f0e",
+                        "on-error-container": "#ffa8a3",
+                        "tertiary-fixed-dim": "#2cefbc",
+                        "secondary-container": "#0b5345",
+                        "on-tertiary-fixed": "#004937",
+                        "primary-fixed": "#caf300",
+                        "secondary-fixed": "#afefdd"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f0e;
+            color: #fafdfa;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glass-panel {
+            background: rgba(33, 39, 37, 0.7);
+            backdrop-filter: blur(24px);
+        }
+
+        .otp-input:focus {
+            box-shadow: 0 0 10px rgba(221, 255, 92, 0.2);
+        }
+
+        /* Custom Satoshi-like feel for Inter */
+        .font-satoshi {
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.01em;
+        }
+
+        .font-space {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between font-body bg-surface text-on-surface">
+    <!-- Header Navigation (Simplified for Transactional Flow) -->
+    <header class="w-full px-8 h-20 flex justify-between items-center max-w-7xl mx-auto">
+        <div class="text-2xl font-bold tracking-tighter text-primary font-headline">
+            Stadia Emerald
+        </div>
+        <div class="hidden md:flex items-center space-x-6 text-on-surface-variant font-medium font-satoshi">
+            <span class="text-sm">Step 2 of 3</span>
+        </div>
+    </header>
+    <!-- Main Content Canvas -->
+    <main class="flex-grow flex items-center justify-center px-6 py-12">
+        <div class="max-w-md w-full">
+            <!-- Contextual Branding/Iconography -->
+            <div class="mb-10 text-left">
+                <div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center mb-6">
+                    <span class="material-symbols-outlined text-primary text-3xl">
+                        phonelink_ring
+                    </span>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold font-headline leading-tight tracking-tight mb-4">
+                    Verify Your Mobile Number
+                </h1>
+                <p class="text-on-surface-variant font-satoshi text-lg leading-relaxed">
+                    We've sent a 6-digit code to <span class="text-on-surface font-semibold tracking-wide">+1 (555) •••
+                        ••92</span>. Enter it below to secure your account.
+                </p>
+            </div>
+            <!-- OTP Form Area -->
+            <form class="space-y-8">
+                <div class="flex justify-between gap-2 md:gap-4">
+                    <!-- OTP Individual Digits -->
+                    <input
+                        class="otp-input w-full aspect-square text-center text-2xl font-bold font-headline bg-surface-container-highest border-none rounded-lg focus:ring-1 focus:ring-primary text-primary transition-all"
+                        maxlength="1" placeholder="•" type="text" />
+                    <input
+                        class="otp-input w-full aspect-square text-center text-2xl font-bold font-headline bg-surface-container-highest border-none rounded-lg focus:ring-1 focus:ring-primary text-primary transition-all"
+                        maxlength="1" placeholder="•" type="text" />
+                    <input
+                        class="otp-input w-full aspect-square text-center text-2xl font-bold font-headline bg-surface-container-highest border-none rounded-lg focus:ring-1 focus:ring-primary text-primary transition-all"
+                        maxlength="1" placeholder="•" type="text" />
+                    <input
+                        class="otp-input w-full aspect-square text-center text-2xl font-bold font-headline bg-surface-container-highest border-none rounded-lg focus:ring-1 focus:ring-primary text-primary transition-all"
+                        maxlength="1" placeholder="•" type="text" />
+                    <input
+                        class="otp-input w-full aspect-square text-center text-2xl font-bold font-headline bg-surface-container-highest border-none rounded-lg focus:ring-1 focus:ring-primary text-primary transition-all"
+                        maxlength="1" placeholder="•" type="text" />
+                    <input
+                        class="otp-input w-full aspect-square text-center text-2xl font-bold font-headline bg-surface-container-highest border-none rounded-lg focus:ring-1 focus:ring-primary text-primary transition-all"
+                        maxlength="1" placeholder="•" type="text" />
+                </div>
+                <!-- Primary Action -->
+                <button
+                    class="w-full py-4 px-6 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold text-lg rounded-lg shadow-lg hover:brightness-110 active:scale-[0.98] transition-all font-satoshi"
+                    type="submit">
+                    Verify &amp; Continue
+                </button>
+            </form>
+            <!-- Secondary Actions & Timer -->
+            <div class="mt-8 pt-8 border-t border-outline-variant/10 text-center">
+                <div class="flex flex-col items-center gap-4">
+                    <p class="text-on-surface-variant font-satoshi flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">schedule</span>
+                        Resend code in <span class="text-on-surface font-mono">00:45</span>
+                    </p>
+                    <button
+                        class="text-primary font-bold font-satoshi hover:underline underline-offset-4 decoration-2 disabled:opacity-50 disabled:no-underline"
+                        disabled="">
+                        Resend Code
+                    </button>
+                </div>
+            </div>
+            <!-- Supporting Illustration / Background Detail -->
+            <div class="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+                <div
+                    class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]">
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Simple Footer -->
+    <footer class="w-full py-8 border-t border-outline-variant/10">
+        <div class="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <span class="font-satoshi text-sm text-on-surface-variant">© 2024 Stadia Emerald. Precision Prediction
+                Markets.</span>
+            <div class="flex gap-6 font-satoshi text-sm text-on-surface-variant">
+                <a class="hover:text-primary transition-colors" href="#">Support</a>
+                <a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

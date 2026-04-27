@@ -16,10 +16,8 @@ import LandingPage from '../pages/home/LandingPage';
 import MarketDetails from '../pages/marketDetails/MarketDetails';
 import User from '../pages/user/User';
 import Style from '../pages/style/Style';
-import AdminDashboard from '../pages/admin/AdminDashboard';
 import NotFound from '../pages/notfound/NotFound';
 import LoginForm from '../pages/auth/LoginForm';
-import AdminLoginForm from '../pages/auth/AdminLoginForm';
 import SignupFlow from '../pages/auth/SignupFlow';
 import ChallengesPage from '../pages/home/ChallengesPage';
 
@@ -131,23 +129,9 @@ const AppRoutes = () => {
         {isRegularUser ? <Portfolio /> : <Redirect to='/' />}
       </Route>
 
-      {/* Admin Routes */}
-      <Route exact path='/admin'>
-        {isLoggedIn && mustChangePassword ? (
-	  <Redirect to='/changepassword' />
-	) : isLoggedIn && auth.usertype === 'ADMIN' ? (
-          <AdminDashboard />
-        ) : (
-          <Redirect to='/' />
-        )}
-      </Route>
-
       {/* Auth Routes */}
       <Route exact path='/login'>
         {isLoggedIn ? <Redirect to='/' /> : <LoginForm />}
-      </Route>
-      <Route exact path='/admin/login'>
-        {isLoggedIn && auth.usertype === 'ADMIN' ? <Redirect to='/admin' /> : <AdminLoginForm />}
       </Route>
       <Route exact path='/register'>
         {isLoggedIn ? <Redirect to='/' /> : <SignupFlow />}
