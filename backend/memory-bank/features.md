@@ -27,3 +27,16 @@ This document tracks the capabilities of the Zurimarket (SocialPredict) Backend.
 
 ## Planned/Ongoing Features
 *(To be updated as new features are requested in future prompts)*
+
+## Prop Firm Challenge System
+- **Challenge Tiers**: Configurable challenge levels (Rookie, Prospect, All-Star, Legend) stored in DB via `ChallengeTier` model.
+- **Challenge Lifecycle**: Users start challenges, which track daily performance. Status transitions: ACTIVE → PASSED/FAILED/EXPIRED.
+- **Rules Engine**: Pure-function validation engine (`handlers/challenges/rules_engine.go`) evaluating profit target, daily loss, losing days, and time expiry.
+- **Badge System Hierarchy**: String-based progression map ("none" -> "rookie" -> "prospect" -> "all-star" -> "legend") enforcing sequential tier access.
+- **Financial Validation**: Start/Retry handlers enforce `VirtualBalance >= (StartingBalance + EntryFee)`.
+- **Daily Log Tracking**: `ChallengeDailyLog` records daily P&L snapshots with open/close balance and rule violation flags.
+- **Reward System**: On challenge pass, credits `RealBalance` on user, automatically upgrades `ChallengeBadge`, and optionally unlocks market creation.
+- **Retry System**: Failed/expired challenges can be retried; paid tiers require re-payment from `VirtualBalance`.
+- **Bet Integration**: `AfterBetHook` updates active challenge balance after each bet, triggers rule evaluation.
+- **Admin Management**: Batch daily evaluation endpoint, challenge listing with filters, aggregated stats, tier configuration updates.
+- **Single Active Challenge**: Only one active challenge per user at a time; enforced at handler level.

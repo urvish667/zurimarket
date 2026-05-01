@@ -11,6 +11,8 @@ import (
 	"socialpredict/setup"
 	"socialpredict/util"
 
+	challenges "socialpredict/handlers/challenges"
+
 	"gorm.io/gorm"
 )
 
@@ -86,6 +88,9 @@ func PlaceBetCore(user *models.User, betRequest models.Bet, db *gorm.DB, loadEco
 		if err := tx.Create(&bet).Error; err != nil {
 			return fmt.Errorf("failed to create bet: %w", err)
 		}
+
+		// Update challenge tracking with the bet cost (negative PnL)
+		challenges.AfterBetHook(tx, user.Username, -totalCost)
 
 		// Referral & Growth Logic: award R100 on FIRST bet
 		if !user.HasPlacedBet {

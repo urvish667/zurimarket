@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"socialpredict/models"
 
+	challenges "socialpredict/handlers/challenges"
+
 	"gorm.io/gorm"
 )
 
@@ -47,6 +49,12 @@ func ApplyTransactionToUser(username string, amount int64, db *gorm.DB, transact
 	if result.RowsAffected == 0 {
 		return fmt.Errorf("user not found: %s", username)
 	}
+
+	// Update challenge tracking with the transaction PnL (for virtual balance only)
+	if balanceType == BalanceTypeVirtual {
+		challenges.AfterBetHook(db, username, delta)
+	}
+
 	return nil
 }
 
