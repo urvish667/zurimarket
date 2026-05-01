@@ -2,18 +2,27 @@ import { API_URL } from '../../../../config';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getMarketLabels } from '../../../../utils/labelMapping';
+import { useAuth } from '../../../../helpers/AuthContent';
+import Pagination from '../../../common/Pagination';
 
 const PositionsActivityLayout = ({ marketId, market, refreshTrigger }) => {
   const [positions, setPositions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { token } = useAuth();
 
   useEffect(() => {
     const fetchPositions = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/v0/markets/positions/${marketId}?page=${currentPage}&limit=10`);
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const response = await fetch(`${API_URL}/v0/markets/positions/${marketId}?page=${currentPage}&limit=10`, {
+          headers
+        });
         if (response.ok) {
           const data = await response.json();
           setPositions(data.positions || []);
@@ -28,7 +37,7 @@ const PositionsActivityLayout = ({ marketId, market, refreshTrigger }) => {
       }
     };
     fetchPositions();
-  }, [marketId, refreshTrigger, currentPage]);
+  }, [marketId, refreshTrigger, currentPage, token]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);

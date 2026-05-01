@@ -17,6 +17,8 @@ const maxUintValue32Bit uint64 = 4294967295 // For 32-bit systems; adjust for 64
 // UserProfitability represents a user's profitability data for a specific market
 type UserProfitability struct {
 	Username       string    `json:"username"`
+	PersonalEmoji  string    `json:"personalEmoji"`
+	Avatar         string    `json:"avatar"`
 	CurrentValue   int64     `json:"currentValue"`
 	TotalSpent     int64     `json:"totalSpent"`
 	Profit         int64     `json:"profit"`
@@ -160,12 +162,37 @@ func CalculateMarketLeaderboard(db *gorm.DB, marketIdStr string) ([]UserProfitab
 		leaderboard[i].Rank = i + 1
 	}
 
+	// Fetch user details for avatars and emojis
+	var usernames []string
+	for _, entry := range leaderboard {
+		usernames = append(usernames, entry.Username)
+	}
+
+	var users []models.User
+	if len(usernames) > 0 {
+		db.Where("username IN ?", usernames).Find(&users)
+	}
+
+	userMap := make(map[string]models.User)
+	for _, u := range users {
+		userMap[u.Username] = u
+	}
+
+	for i := range leaderboard {
+		if u, ok := userMap[leaderboard[i].Username]; ok {
+			leaderboard[i].PersonalEmoji = u.PersonalEmoji
+			leaderboard[i].Avatar = u.Avatar
+		}
+	}
+
 	return leaderboard, nil
 }
 
 // GlobalUserProfitability represents a user's total profitability across all markets
 type GlobalUserProfitability struct {
 	Username          string    `json:"username"`
+	PersonalEmoji     string    `json:"personalEmoji"`
+	Avatar            string    `json:"avatar"`
 	TotalProfit       int64     `json:"totalProfit"`
 	TotalCurrentValue int64     `json:"totalCurrentValue"`
 	TotalSpent        int64     `json:"totalSpent"`
@@ -178,99 +205,113 @@ type GlobalUserProfitability struct {
 // CalculateGlobalLeaderboard calculates profitability rankings for all users across all markets
 func CalculateGlobalLeaderboard(db *gorm.DB) ([]GlobalUserProfitability, error) {
 	if db == nil {
-		return nil, errors.New("Failed to fetch users from database: database connection is nil")
+		return nil, errors.New("database connection is nil")
 	}
 
-	// Get all users who have made bets
-	var users []models.User
-	if err := db.Find(&users).Error; err != nil {
-		ErrorLogger(err, "Failed to fetch users from database.")
+	// 1. Get all unique market IDs that have bets to avoid processing empty markets
+	var marketIDs []uint
+	if err := db.Model(&models.Bet{}).Distinct("market_id").Pluck("market_id", &marketIDs).Error; err != nil {
 		return nil, err
 	}
 
-	if len(users) == 0 {
+	if len(marketIDs) == 0 {
 		return []GlobalUserProfitability{}, nil
 	}
 
-	var globalLeaderboard []GlobalUserProfitability
+	// 2. Fetch earliest bet for all users in one query to avoid N+1
+	type EarliestBetResult struct {
+		Username    string
+		EarliestBet time.Time
+	}
+	var earliestBetResults []EarliestBetResult
+	if err := db.Model(&models.Bet{}).Select("username, MIN(placed_at) as earliest_bet").Group("username").Find(&earliestBetResults).Error; err != nil {
+		return nil, err
+	}
 
-	for _, user := range users {
-		// Get all market positions for this user
-		userPositions, err := CalculateAllUserMarketPositions_WPAM_DBPM(db, user.Username)
+	earliestBetMap := make(map[string]time.Time)
+	for _, res := range earliestBetResults {
+		earliestBetMap[res.Username] = res.EarliestBet
+	}
+
+	// 3. Global stats map to aggregate results
+	statsMap := make(map[string]*GlobalUserProfitability)
+
+	// 4. Process each market once and aggregate user positions
+	for _, marketID := range marketIDs {
+		marketIDStr := strconv.FormatUint(uint64(marketID), 10)
+		marketPositions, err := CalculateMarketPositions_WPAM_DBPM(db, marketIDStr)
 		if err != nil {
-			ErrorLogger(err, "Failed to calculate user positions for "+user.Username)
-			continue // Skip this user but continue with others
-		}
-
-		// Skip users with no positions
-		if len(userPositions) == 0 {
+			log.Printf("Warning: failed to calculate positions for market %d: %v", marketID, err)
 			continue
 		}
 
-		var totalProfit int64 = 0
-		var totalCurrentValue int64 = 0
-		var totalSpent int64 = 0
-		var activeMarkets int = 0
-		var resolvedMarkets int = 0
-		var earliestBet time.Time
-		var hasEarliestBet bool = false
-
-		// Get all bets for this user to find earliest bet time
-		var userBets []models.Bet
-		if err := db.Where("username = ?", user.Username).Order("placed_at ASC").Find(&userBets).Error; err != nil {
-			ErrorLogger(err, "Failed to fetch bets for user "+user.Username)
-			continue
-		}
-
-		if len(userBets) > 0 {
-			earliestBet = userBets[0].PlacedAt
-			hasEarliestBet = true
-		}
-
-		// Aggregate profits from all markets
-		for _, position := range userPositions {
-			// Calculate profit for this market: currentValue - totalSpent
-			marketProfit := position.Value - position.TotalSpent
-
-			totalProfit += marketProfit
-			totalCurrentValue += position.Value
-			totalSpent += position.TotalSpent
-
-			// Count market types
-			if position.IsResolved {
-				resolvedMarkets++
-			} else {
-				activeMarkets++
+		for _, pos := range marketPositions {
+			userStats, exists := statsMap[pos.Username]
+			if !exists {
+				userStats = &GlobalUserProfitability{
+					Username: pos.Username,
+				}
+				statsMap[pos.Username] = userStats
 			}
-		}
 
-		// Only include users with some betting activity
-		if hasEarliestBet {
-			globalLeaderboard = append(globalLeaderboard, GlobalUserProfitability{
-				Username:          user.Username,
-				TotalProfit:       totalProfit,
-				TotalCurrentValue: totalCurrentValue,
-				TotalSpent:        totalSpent,
-				ActiveMarkets:     activeMarkets,
-				ResolvedMarkets:   resolvedMarkets,
-				EarliestBet:       earliestBet,
-			})
+			// Profit = Current Value - Total Spent
+			marketProfit := pos.Value - pos.TotalSpent
+
+			userStats.TotalProfit += marketProfit
+			userStats.TotalCurrentValue += pos.Value
+			userStats.TotalSpent += pos.TotalSpent
+
+			if pos.IsResolved {
+				userStats.ResolvedMarkets++
+			} else {
+				userStats.ActiveMarkets++
+			}
 		}
 	}
 
-	// Sort by total profit (descending), then by earliest bet time (ascending) for ties
+	// 5. Convert map to slice and assign earliest bets
+	var globalLeaderboard []GlobalUserProfitability
+	for username, stats := range statsMap {
+		if earliestBet, ok := earliestBetMap[username]; ok {
+			stats.EarliestBet = earliestBet
+			globalLeaderboard = append(globalLeaderboard, *stats)
+		}
+	}
+
+	// 6. Sort by total profit (descending), then by earliest bet time (ascending) for ties
 	sort.Slice(globalLeaderboard, func(i, j int) bool {
 		if globalLeaderboard[i].TotalProfit == globalLeaderboard[j].TotalProfit {
-			// If profits are equal, rank by who bet earlier (ascending time)
 			return globalLeaderboard[i].EarliestBet.Before(globalLeaderboard[j].EarliestBet)
 		}
-		// Otherwise rank by total profit (descending)
 		return globalLeaderboard[i].TotalProfit > globalLeaderboard[j].TotalProfit
 	})
 
-	// Assign ranks
+	// 7. Assign ranks
 	for i := range globalLeaderboard {
 		globalLeaderboard[i].Rank = i + 1
+	}
+
+	// 8. Fetch user details for avatars and emojis
+	var usernames []string
+	for _, entry := range globalLeaderboard {
+		usernames = append(usernames, entry.Username)
+	}
+
+	var users []models.User
+	if len(usernames) > 0 {
+		db.Where("username IN ?", usernames).Find(&users)
+	}
+
+	userMap := make(map[string]models.User)
+	for _, u := range users {
+		userMap[u.Username] = u
+	}
+
+	for i := range globalLeaderboard {
+		if u, ok := userMap[globalLeaderboard[i].Username]; ok {
+			globalLeaderboard[i].PersonalEmoji = u.PersonalEmoji
+			globalLeaderboard[i].Avatar = u.Avatar
+		}
 	}
 
 	return globalLeaderboard, nil

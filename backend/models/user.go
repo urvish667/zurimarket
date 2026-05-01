@@ -50,7 +50,11 @@ type PublicUser struct {
 	ReferralCode  string `json:"referralCode"`
 	ReferredBy    string `json:"referredBy,omitempty"`
 	HasPlacedBet  bool   `json:"hasPlacedBet" gorm:"default:false"`
-	CurrentStreak  int    `json:"currentStreak" gorm:"default:0"`
+	CurrentStreak int    `json:"currentStreak" gorm:"default:0"`
+
+	// Visual Customization
+	PersonalEmoji string `json:"personalEmoji" gorm:"default:👤"`
+	Avatar        string `json:"avatar"`
 	IsFunded       bool   `json:"isFunded" gorm:"default:false"`
 	ChallengeBadge string `json:"challengeBadge" gorm:"default:'none'"`
 }

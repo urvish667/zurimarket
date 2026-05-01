@@ -21,6 +21,7 @@ function MarketDetailsTable({
   numUsers,
   totalVolume,
   marketDust,
+  commentCount = 0,
   currentProbability,
   probabilityChanges,
   optionProbabilities = {},
@@ -313,7 +314,7 @@ function MarketDetailsTable({
             {[
               { label: 'Traders', value: `${numUsers}`, icon: 'group' },
               { label: 'Volume', value: formatCurrency(totalVolume), coinIcon: true, icon: 'database' },
-              { label: 'Comments', value: '0', icon: 'chat_bubble' },
+              { label: 'Comments', value: `${commentCount}`, icon: 'chat_bubble' },
               {
                 label: 'Closes',
                 value: market.isResolved ? 'Closed' : formatResolutionDate(market.resolutionDateTime),

@@ -58,6 +58,8 @@ func Run(db *gorm.DB) error {
 	}
 	sort.Strings(ids)
 
+	log.Printf("migration - Run: found %d migrations in registry: %v", len(ids), ids)
+
 	for _, id := range ids {
 		if applied[id] {
 			continue
@@ -73,7 +75,7 @@ func Run(db *gorm.DB) error {
 		if err := db.Create(&SchemaMigration{ID: id, AppliedAt: time.Now()}).Error; err != nil {
 			return fmt.Errorf("record SchemaMigration %s: %w", id, err)
 		}
-		// optional: log.Printf("migration - applied %s", id)
+		log.Printf("migration - applied %s successfully", id)
 	}
 	return nil
 }
@@ -81,7 +83,7 @@ func Run(db *gorm.DB) error {
 // MigrateDB is the public entry; it never crashes the app.
 // If there are zero registered migrations, we WARN and fallback to AutoMigrate core tables.
 func MigrateDB(db *gorm.DB) error {
-	log.Printf("migration - MigrateDB: starting database migrations")
+	log.Printf("migration - MigrateDB: starting database migrations. Registry size: %d", len(registry))
 
 	if len(registry) == 0 {
 		log.Printf("migration - WARN: no registered migrations found; falling back to AutoMigrate for baseline schema")
@@ -93,6 +95,7 @@ func MigrateDB(db *gorm.DB) error {
 			&models.MarketOption{},
 			&models.Bet{},
 			&models.HomepageContent{},
+			&models.Comment{},
 			&models.ChallengeTier{},
 			&models.UserChallenge{},
 			&models.ChallengeDailyLog{},
@@ -120,6 +123,9 @@ func MigrateDB(db *gorm.DB) error {
 	if err := db.AutoMigrate(&models.Bet{}); err != nil {
 		return fmt.Errorf("failed to auto-migrate Bet after migrations: %w", err)
 	}
+	if err := db.AutoMigrate(&models.Comment{}); err != nil {
+		return fmt.Errorf("failed to auto-migrate Comment after migrations: %w", err)
+	}
 	if err := db.AutoMigrate(&models.ChallengeTier{}); err != nil {
 		return fmt.Errorf("failed to auto-migrate ChallengeTier after migrations: %w", err)
 	}
@@ -130,6 +136,6 @@ func MigrateDB(db *gorm.DB) error {
 		return fmt.Errorf("failed to auto-migrate ChallengeDailyLog after migrations: %w", err)
 	}
 
-	log.Printf("migration - MigrateDB: database migrations completed")
+	log.Printf("migration - MigrateDB: database migrations completed successfully")
 	return nil
 }

@@ -22,6 +22,7 @@ const MarketDetails = () => {
           numUsers={details.numUsers}
           totalVolume={details.totalVolume}
           marketDust={details.marketDust || 0}
+          commentCount={details.commentCount || 0}
           currentProbability={currentProbability}
           probabilityChanges={details.probabilityChanges}
           optionProbabilities={optionProbabilities}

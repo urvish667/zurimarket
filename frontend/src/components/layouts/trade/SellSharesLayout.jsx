@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchUserShares, submitSale } from './TradeUtils';
 import { useMarketLabels } from '../../../hooks/useMarketLabels';
 import { CoinIcon, formatCurrency } from '../../../utils/CurrencyUtils';
+import { API_URL } from '../../../config';
 
 const SellSharesLayout = ({ marketId, market, token, onTransactionSuccess }) => {
     // Array of objects { outcome: "label", count: amount }
@@ -17,9 +18,9 @@ const SellSharesLayout = ({ marketId, market, token, onTransactionSuccess }) => 
     useEffect(() => {
         const fetchFeeData = async () => {
             try {
-                const response = await fetch('/v0/setup');
+                const response = await fetch(`${API_URL}/v0/setup`);
                 const data = await response.json();
-                setFeeData(data.Betting.BetFees);
+                setFeeData(data.betting.betFees);
                 setIsLoading(false);
             } catch (error) {
                 console.error('Error fetching fee data:', error);
@@ -193,20 +194,20 @@ const SellSharesLayout = ({ marketId, market, token, onTransactionSuccess }) => 
                         <span className="material-symbols-outlined text-red-400 text-sm">receipt_long</span>
                         <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Fee Details</span>
                     </div>
-                    {feeData.InitialBetFee === 0 && feeData.SellSharesFee === 0 ? (
+                    {feeData.initialBetFee === 0 && feeData.sellSharesFee === 0 ? (
                         <p className="text-[10px] uppercase font-black tracking-widest text-white/40">No fees on this transaction</p>
                     ) : (
                         <div className="space-y-1">
-                            {feeData.InitialBetFee > 0 && (
+                            {feeData.initialBetFee > 0 && (
                                 <p className="text-[10px] uppercase font-black tracking-widest text-white/40 flex justify-between">
                                     <span>Initial Trade Fee:</span>
-                                    <span className="text-white">🪙 {feeData.InitialBetFee}</span>
+                                    <span className="text-white">🪙 {feeData.initialBetFee}</span>
                                 </p>
                             )}
-                            {feeData.SellSharesFee > 0 && (
+                            {feeData.sellSharesFee > 0 && (
                                 <p className="text-[10px] uppercase font-black tracking-widest text-white/40 flex justify-between">
                                     <span>Trading Fee:</span>
-                                    <span className="text-white">🪙 {feeData.SellSharesFee}</span>
+                                    <span className="text-white">🪙 {feeData.sellSharesFee}</span>
                                 </p>
                             )}
                         </div>

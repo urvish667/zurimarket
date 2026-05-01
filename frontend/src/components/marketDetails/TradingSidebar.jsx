@@ -4,6 +4,7 @@ import { fetchUserShares, submitSale } from '../layouts/trade/TradeUtils';
 import { useMarketLabels } from '../../hooks/useMarketLabels';
 import MarketProjectionLayout from '../layouts/marketprojection/MarketProjectionLayout';
 import { CoinIcon, formatCurrency } from '../../utils/CurrencyUtils';
+import { API_URL } from '../../config';
 
 const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSuccess, currentProbability, optionProbabilities = {}, externalSelectedOutcome }) => {
   const [mode, setMode] = useState('buy'); // 'buy' or 'sell'
@@ -27,9 +28,9 @@ const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSucc
   useEffect(() => {
     const fetchFeeData = async () => {
       try {
-        const response = await fetch('/v0/setup');
+        const response = await fetch(`${API_URL}/v0/setup`);
         const data = await response.json();
-        setFeeData(data.Betting.BetFees);
+        setFeeData(data.betting.betFees);
       } catch (error) {
         console.error('Error fetching fee data:', error);
       }
@@ -339,12 +340,12 @@ const TradingSidebar = ({ marketId, market, token, isLoggedIn, onTransactionSucc
         {/* Fee Info */}
         {feeData && (
           <div className="mt-4 pt-3 border-t border-white/5">
-            {(mode === 'buy' ? feeData.BuySharesFee : feeData.SellSharesFee) > 0 ? (
+            {(mode === 'buy' ? feeData.buySharesFee : feeData.sellSharesFee) > 0 ? (
               <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/30">
                 <span>Trading Fee</span>
                 <span className="flex items-center gap-1">
                   <CoinIcon size="text-[10px]" />
-                  {formatCurrency(mode === 'buy' ? feeData.BuySharesFee : feeData.SellSharesFee)}
+                  {formatCurrency(mode === 'buy' ? feeData.buySharesFee : feeData.sellSharesFee)}
                 </span>
               </div>
             ) : (

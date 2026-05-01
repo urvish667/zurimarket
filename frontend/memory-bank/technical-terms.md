@@ -10,3 +10,6 @@
 - **ZuriMarket**: The brand/platform name. Also referred to in components (e.g., `ZuriMarketCard`).
 - **Kinetic Ledger**: Conceptual term used in the platform UI to describe the real-time sentiment/betting engine.
 - **Binary Labels**: Custom text labels substituting "YES" and "NO" (e.g., "BULL" vs "BEAR") for better contextual mapping.
+- **Profitability Ranking**: A user ranking metric calculated as `Current Portfolio Value - Total Amount Spent`.
+- **Reply Thread**: A hierarchical visual structure for nested comments on market pages.
+- **GFM (GitHub Flavored Markdown)**: The markdown dialect supported by the platform's comment system for rich text formatting.
