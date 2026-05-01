@@ -15,6 +15,8 @@
 - **Currency Display**: Always use `formatCurrency()` and `<CoinIcon />` from `CurrencyUtils.jsx` for displaying monetary values.
 - **Labels Mapping**: Use `labelMapping.js` and `useMarketLabels.js` when rendering market outcomes (YES/NO/Custom).
 - **Date Formatting**: Standardized using `formatResolutionDate.js`.
+- **User Identity**: User profiles should be rendered with a priority of Avatar (URL) > Personal Emoji > Default Icon (👤).
+- **Content Rendering**: User-generated content (like comments) must be rendered using `ReactMarkdown` with GFM support to ensure safety and rich formatting.
 - **UI States**: Loading states utilize standard `LoadingSpinner`, and fallbacks are implemented via `ErrorBoundary`.
 
 ## Form Inputs

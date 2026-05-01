@@ -24,6 +24,9 @@ This document tracks the capabilities of the Zurimarket (SocialPredict) Backend.
 - **System Health Metrics**: Extended health endpoint providing total user, market, and bet counts.
 - **Economic Policy Management**: Dynamic configuration of economic parameters like market creation costs and account requirements.
 - **Identity Provisioning**: Endpoint for manual user creation by admins with secure password generation.
+- **Comment System**: Support for threaded replies (root + 1 level nesting), pagination (limit/offset), rich-text markdown rendering, HTML sanitization (via `bluemonday`), and user identity (avatars/emojis) integration. Validates reply context for security.
+- **Leaderboard System**: Specialized ranking logic for market-specific and global user profitability.
 
 ## Planned/Ongoing Features
-*(To be updated as new features are requested in future prompts)*
+- **Real-time Notifications**: WebSocket-based alerts for betting activity and comment replies.
+- **Advanced Social Features**: User-to-user follows and activity feeds.

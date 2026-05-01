@@ -25,6 +25,7 @@ type MarketDetailHandlerResponse struct {
 	NumUsers            int                                       `json:"numUsers"`
 	TotalVolume         int64                                     `json:"totalVolume"`
 	MarketDust          int64                                     `json:"marketDust"`
+	CommentCount        int64                                     `json:"commentCount"`
 	OptionProbabilities map[string]float64                        `json:"optionProbabilities,omitempty"`
 }
 
@@ -99,6 +100,11 @@ func MarketDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	response.NumUsers = models.GetNumMarketUsers(bets)
 	response.TotalVolume = marketmath.GetMarketVolumeWithDust(bets)
 	response.MarketDust = marketmath.GetMarketDust(bets)
+
+	// Fetch comment count
+	var commentCount int64
+	db.Model(&models.Comment{}).Where("market_id = ?", marketIDUint).Count(&commentCount)
+	response.CommentCount = commentCount
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)

@@ -51,6 +51,10 @@ type PublicUser struct {
 	ReferredBy    string `json:"referredBy,omitempty"`
 	HasPlacedBet  bool   `json:"hasPlacedBet" gorm:"default:false"`
 	CurrentStreak int    `json:"currentStreak" gorm:"default:0"`
+
+	// Visual Customization
+	PersonalEmoji string `json:"personalEmoji" gorm:"default:👤"`
+	Avatar        string `json:"avatar"`
 }
 
 // PrivateUser contains sensitive user information.

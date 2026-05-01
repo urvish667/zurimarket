@@ -21,6 +21,7 @@ func main() {
 		log.Printf("env: warning loading environment: %v", err)
 	}
 
+	log.Println("Initializing database...")
 	util.InitDB()
 	db := util.GetDB()
 
@@ -29,9 +30,11 @@ func main() {
 		log.Fatalf("database readiness check failed: %v", err)
 	}
 
+	log.Println("Running migrations...")
 	if err := migration.MigrateDB(db); err != nil {
-		log.Printf("migration: warning: %v", err)
+		log.Printf("CRITICAL migration error: %v", err)
 	}
+	log.Println("Migrations completed.")
 
 	seed.SeedUsers(db)
 	if err := seed.SeedHomepage(db, "."); err != nil {

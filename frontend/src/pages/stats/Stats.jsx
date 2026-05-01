@@ -506,12 +506,21 @@ const Stats = () => {
                         {getRankDisplay(user.rank)}
                       </td>
                       <td className="py-3 px-4">
-                        <Link
-                          to={`/user/${user.username}`}
-                          className="text-blue-400 font-medium hover:text-blue-300 transition-colors"
-                        >
-                          {user.username}
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center text-lg overflow-hidden flex-shrink-0 border border-gray-600 shadow-inner">
+                            {user.avatar ? (
+                              <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                            ) : (
+                              user.personalEmoji || '👤'
+                            )}
+                          </div>
+                          <Link
+                            to={`/user/${user.username}`}
+                            className="text-blue-400 font-medium hover:text-blue-300 transition-colors"
+                          >
+                            @{user.username}
+                          </Link>
+                        </div>
                       </td>
                       <td className={`py-3 px-4 font-semibold ${getProfitColor(user.totalProfit)}`}>
                         <div className="flex items-center gap-1">

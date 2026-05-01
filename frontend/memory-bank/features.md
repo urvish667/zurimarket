@@ -14,7 +14,7 @@
 - **Wallet & Portfolio**: Track user's coin balance, bet history, and current active portfolio.
 
 ## Social & Gamification
-- **Leaderboard / Stats**: Tracking top predictors on the platform.
-- **Challenges**: Engaging users with specific prediction challenges.
-- **Activity**: Feed or log of platform activities.
-- **User Profile**: Display names, user icons, and public profile views.
+- **Enhanced Leaderboards**: Real-time market-specific and global rankings based on user profitability, featuring rank icons (🥇, 🥈, 🥉) and user identity integration.
+- **Rich Comment System**: Threaded discussions on market pages with 1-level nested replies, "Load More" pagination, rich-text Markdown support, and user identity display (non-clickable usernames for focused discussion).
+- **Visual Identity**: Profile customization via user avatars (URLs) and personal emojis used throughout the social layers of the platform.
+- **Platform Stats**: Global analytics and system financial metrics for transparency.

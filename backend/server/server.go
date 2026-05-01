@@ -19,6 +19,7 @@ import (
 	setuphandlers "socialpredict/handlers/setup"
 	statshandlers "socialpredict/handlers/stats"
 	usershandlers "socialpredict/handlers/users"
+	commenthandlers "socialpredict/handlers/comments"
 	usercredit "socialpredict/handlers/users/credit"
 	privateuser "socialpredict/handlers/users/privateuser"
 	"socialpredict/handlers/users/publicuser"
@@ -187,8 +188,8 @@ func Start() {
 	router.Handle("/v0/register/verify", loginSecurityMiddleware(http.HandlerFunc(usershandlers.VerifyRegistrationHandler))).Methods("POST")
 
 	// application setup and stats information
-	router.Handle("/v0/setup", protectedRoute(setuphandlers.GetSetupHandler(setup.LoadEconomicsConfig))).Methods("GET")
-	router.Handle("/v0/setup/frontend", protectedRoute(setuphandlers.GetFrontendSetupHandler(setup.LoadEconomicsConfig))).Methods("GET")
+	router.HandleFunc("/v0/setup", setuphandlers.GetSetupHandler(setup.LoadEconomicsConfig)).Methods("GET")
+	router.HandleFunc("/v0/setup/frontend", setuphandlers.GetFrontendSetupHandler(setup.LoadEconomicsConfig)).Methods("GET")
 	router.HandleFunc("/v0/stats", statshandlers.StatsHandler()).Methods("GET")
 	router.Handle("/v0/system/metrics", protectedRoute(metricshandlers.GetSystemMetricsHandler)).Methods("GET")
 	router.Handle("/v0/global/leaderboard", protectedRoute(metricshandlers.GetGlobalLeaderboardHandler)).Methods("GET")
@@ -206,7 +207,9 @@ func Start() {
 	router.Handle("/v0/markets/bets/{marketId}", protectedRoute(betshandlers.MarketBetsDisplayHandler)).Methods("GET")
 	router.Handle("/v0/markets/positions/{marketId}", protectedRoute(positions.MarketDBPMPositionsHandler)).Methods("GET")
 	router.Handle("/v0/markets/positions/{marketId}/{username}", protectedRoute(positions.MarketDBPMUserPositionsHandler)).Methods("GET")
-	router.Handle("/v0/markets/leaderboard/{marketId}", protectedRoute(marketshandlers.MarketLeaderboardHandler)).Methods("GET")
+	router.HandleFunc("/v0/markets/leaderboard/{marketId}", marketshandlers.MarketLeaderboardHandler).Methods("GET")
+	router.Handle("/v0/markets/{marketId}/comments", protectedRoute(commenthandlers.CreateCommentHandler)).Methods("POST")
+	router.HandleFunc("/v0/markets/{marketId}/comments", commenthandlers.GetCommentsHandler).Methods("GET")
 
 	// handle public user stuff
 

@@ -20,6 +20,7 @@ This document outlines the coding and system-level standards for developing the 
 ## Database Standards
 - Use GORM for database queries to ensure cross-database compatibility.
 - Place all table structure definitions strictly inside the `models/` package.
+- **Migrations**: New database schema changes must be implemented as separate migration files in `migration/migrations/`, using the `Register` pattern in an `init()` function for automatic execution on startup.
 - Database operations should handle context appropriately if timeouts or cancellations are required.
 
 ## Security Standards

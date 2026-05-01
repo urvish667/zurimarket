@@ -1,3 +1,5 @@
+import { API_URL } from '../config';
+
 export const MIN_SIG_FIGS = 2;
 export const MAX_SIG_FIGS = 9;
 export const DEFAULT_SIG_FIGS = 4;
@@ -35,7 +37,7 @@ export const loadChartFormatter = async () => {
   let requestedSigFigs = DEFAULT_SIG_FIGS;
 
   try {
-    const response = await fetch('/v0/setup/frontend', {
+    const response = await fetch(`${API_URL}/v0/setup/frontend`, {
       headers: {
         'Content-Type': 'application/json',
       },

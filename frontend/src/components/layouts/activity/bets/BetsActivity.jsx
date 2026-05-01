@@ -2,16 +2,19 @@ import { API_URL } from '../../../../config';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Pagination from '../../../common/Pagination';
+import { useAuth } from '../../../../helpers/AuthContent';
 
 const BetsActivityLayout = ({ marketId, refreshTrigger }) => {
     const [bets, setBets] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [pagination, setPagination] = useState(null);
+    const { token } = useAuth();
 
     useEffect(() => {
         const fetchBets = async () => {
-            const response = await fetch(`${API_URL}/v0/markets/bets/${marketId}?page=${currentPage}&limit=20`, {
-            });
+            const headers = { 'Authorization': `Bearer ${token}` };
+            const response = await fetch(`${API_URL}/v0/markets/bets/${marketId}?page=${currentPage}&limit=20`, { headers });
+
             if (response.ok) {
                 const data = await response.json();
                 setBets(data.bets || []);
@@ -21,7 +24,7 @@ const BetsActivityLayout = ({ marketId, refreshTrigger }) => {
             }
         };
         fetchBets();
-    }, [marketId, refreshTrigger, currentPage]);
+    }, [marketId, refreshTrigger, currentPage, token]);
 
     const handlePageChange = (page) => {
         setCurrentPage(page);

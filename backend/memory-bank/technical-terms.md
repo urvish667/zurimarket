@@ -16,3 +16,5 @@ This glossary defines common terminology used within the Zurimarket domain and t
 - **Audit Log**: A historical record of all critical system actions, specifically betting transactions in the current version.
 - **Economic Policy**: A set of configurable rules governing the platform's economy, including costs for market creation and eligibility requirements.
 - **Identity Provisioning**: The administrative process of manually creating and onboarding new users or administrators.
+- **Profitability**: A calculation of a user's total investment (spent) versus the current market value of their positions, used for leaderboard rankings.
+- **Threaded Comments**: A hierarchical comment structure allowing users to reply to specific comments, creating organized discussion threads.

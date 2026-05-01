@@ -3,6 +3,7 @@ import MarketProjectionLayout from '../marketprojection/MarketProjectionLayout';
 import { submitBet } from './TradeUtils';
 import { useMarketLabels } from '../../../hooks/useMarketLabels';
 import { CoinIcon, formatCurrency } from '../../../utils/CurrencyUtils';
+import { API_URL } from '../../../config';
 
 const BuySharesLayout = ({ marketId, market, token, onTransactionSuccess }) => {
     const [betAmount, setBetAmount] = useState(1);
@@ -21,9 +22,9 @@ const BuySharesLayout = ({ marketId, market, token, onTransactionSuccess }) => {
     useEffect(() => {
         const fetchFeeData = async () => {
             try {
-                const response = await fetch('/v0/setup');
+                const response = await fetch(`${API_URL}/v0/setup`);
                 const data = await response.json();
-                setFeeData(data.Betting.BetFees);
+                setFeeData(data.betting.betFees);
                 setIsLoading(false);
             } catch (error) {
                 console.error('Error fetching fee data:', error);
@@ -132,32 +133,32 @@ const BuySharesLayout = ({ marketId, market, token, onTransactionSuccess }) => {
                         <span className="material-symbols-outlined text-[#ddff5c] text-sm">receipt_long</span>
                         <span className="text-[10px] font-black text-[#ddff5c] uppercase tracking-widest">Fee Details</span>
                     </div>
-                    {feeData.InitialBetFee === 0 && feeData.BuySharesFee === 0 ? (
+                    {feeData.initialBetFee === 0 && feeData.buySharesFee === 0 ? (
                         <p className="text-[10px] uppercase font-black tracking-widest text-white/40">No fees on this transaction</p>
                     ) : (
                         <div className="space-y-1">
-                            {feeData.InitialBetFee > 0 && (
+                            {feeData.initialBetFee > 0 && (
                                 <p className="text-[10px] uppercase font-black tracking-widest text-white/40 flex justify-between items-center">
                                     <span>Initial Trade Fee:</span>
                                     <span className="text-white flex items-center gap-1">
                                         <CoinIcon size="text-[10px]" />
-                                        {formatCurrency(feeData.InitialBetFee)}
+                                        {formatCurrency(feeData.initialBetFee)}
                                     </span>
                                 </p>
                             )}
-                            {feeData.BuySharesFee > 0 && (
+                            {feeData.buySharesFee > 0 && (
                                 <p className="text-[10px] uppercase font-black tracking-widest text-white/40 flex justify-between items-center">
                                     <span>Trading Fee:</span>
                                     <span className="text-white flex items-center gap-1">
                                         <CoinIcon size="text-[10px]" />
-                                        {formatCurrency(feeData.BuySharesFee)}
+                                        {formatCurrency(feeData.buySharesFee)}
                                     </span>
                                 </p>
                             )}
                         </div>
                     )}
                 </div>
-            )}
+            ) [diff_block_end]}
 
             <div className="border-t border-white/10 my-6"></div>
             
