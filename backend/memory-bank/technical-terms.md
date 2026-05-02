@@ -18,3 +18,12 @@ This glossary defines common terminology used within the Zurimarket domain and t
 - **Identity Provisioning**: The administrative process of manually creating and onboarding new users or administrators.
 - **Profitability**: A calculation of a user's total investment (spent) versus the current market value of their positions, used for leaderboard rankings.
 - **Threaded Comments**: A hierarchical comment structure allowing users to reply to specific comments, creating organized discussion threads.
+
+## Challenge System
+- **ChallengeTier**: A configurable challenge level definition (e.g., Rookie, Prospect) with starting balance, profit target, duration, and rules. Stored in DB for admin flexibility.
+- **UserChallenge**: A single challenge attempt by a user, tracking current balance, losing days, and status. Each retry creates a new row.
+- **ChallengeDailyLog**: A daily performance snapshot recording open/close balance, P&L, loss percentage, and rule violations.
+- **Rules Engine**: Pure-function validation system that evaluates profit target completion, daily loss limits, losing day counts, and time expiry.
+- **AfterBetHook**: Integration point in the bet handler that updates the user's active challenge after each bet placement.
+- **Funded Badge**: A visual badge (`IsFunded` flag on User) granted when a user passes a challenge tier that has `GrantsFunded=true`.
+- **Batch Daily Evaluation**: Admin-triggered process that evaluates all active challenges for end-of-day rule checks.

@@ -23,3 +23,11 @@
 - **Challenges**: Engaging users with specific prediction challenges.
 - **Activity**: Feed or log of platform activities.
 - **User Profile**: Display names, user icons, and public profile views.
+
+## Prop Firm Challenge Admin
+- **Challenge Control Center** (tab: `?tab=challenges`): Admin dashboard section for managing the challenge system.
+- **Badge System Oversight**: Admin visibility into the challenge badge progression (Rookie -> Legend).
+- **Challenge Stats**: Aggregated metrics — active count, pass rate, total revenue from entry fees, total rewards paid.
+- **Challenge List**: Filterable/paginated list of all user challenges with status, progress bars, and losing day tracking.
+- **Daily Evaluation Engine**: Admin-triggered batch evaluation of all active challenges for expiry and rule violations.
+- **Tier Configuration**: Ability to update challenge tier parameters (entry fee, target, duration, etc.) via admin API.

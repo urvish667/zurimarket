@@ -5,6 +5,7 @@ import MarketModeration from '../../components/layouts/admin/MarketModeration';
 import AuditLog from '../../components/layouts/admin/AuditLog';
 import SystemStatus from '../../components/layouts/admin/SystemStatus';
 import EconomicsSettings from '../../components/layouts/admin/EconomicsSettings';
+import ChallengeControlCenter from '../../components/layouts/admin/ChallengeControlCenter';
 
 function AdminDashboard() {
     const location = useLocation();
@@ -25,6 +26,8 @@ function AdminDashboard() {
                 return <AdminAddUser />;
             case 'economics':
                 return <EconomicsSettings />;
+            case 'challenges':
+                return <ChallengeControlCenter />;
             default:
                 return <UserManagement />;
         }
@@ -44,6 +47,7 @@ function AdminDashboard() {
                     {activeTab === 'audit' && 'Transaction Ledger'}
                     {activeTab === 'adduser' && 'Identity Provisioning'}
                     {activeTab === 'economics' && 'Economic Policy'}
+                    {activeTab === 'challenges' && 'Challenge Control Center'}
                 </h1>
             </header>
             

@@ -96,6 +96,9 @@ func MigrateDB(db *gorm.DB) error {
 			&models.Bet{},
 			&models.HomepageContent{},
 			&models.Comment{},
+			&models.ChallengeTier{},
+			&models.UserChallenge{},
+			&models.ChallengeDailyLog{},
 		); err != nil {
 			return fmt.Errorf("fallback AutoMigrate failed: %w", err)
 		}
@@ -122,6 +125,15 @@ func MigrateDB(db *gorm.DB) error {
 	}
 	if err := db.AutoMigrate(&models.Comment{}); err != nil {
 		return fmt.Errorf("failed to auto-migrate Comment after migrations: %w", err)
+	}
+	if err := db.AutoMigrate(&models.ChallengeTier{}); err != nil {
+		return fmt.Errorf("failed to auto-migrate ChallengeTier after migrations: %w", err)
+	}
+	if err := db.AutoMigrate(&models.UserChallenge{}); err != nil {
+		return fmt.Errorf("failed to auto-migrate UserChallenge after migrations: %w", err)
+	}
+	if err := db.AutoMigrate(&models.ChallengeDailyLog{}); err != nil {
+		return fmt.Errorf("failed to auto-migrate ChallengeDailyLog after migrations: %w", err)
 	}
 
 	log.Printf("migration - MigrateDB: database migrations completed successfully")

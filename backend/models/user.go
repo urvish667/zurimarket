@@ -55,6 +55,8 @@ type PublicUser struct {
 	// Visual Customization
 	PersonalEmoji string `json:"personalEmoji" gorm:"default:👤"`
 	Avatar        string `json:"avatar"`
+	IsFunded       bool   `json:"isFunded" gorm:"default:false"`
+	ChallengeBadge string `json:"challengeBadge" gorm:"default:'none'"`
 }
 
 // PrivateUser contains sensitive user information.

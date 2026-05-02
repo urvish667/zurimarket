@@ -126,6 +126,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		"usertype":           user.Role,
 		"isVerified":         user.IsVerified,
 		"mustChangePassword": user.MustChangePassword,
+		"challengeBadge":     user.ChallengeBadge,
 	}
 	json.NewEncoder(w).Encode(responseData)
 }

@@ -30,6 +30,8 @@ import (
 	"strconv"
 	"strings"
 
+	challengeshandlers "socialpredict/handlers/challenges"
+
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
@@ -259,6 +261,25 @@ func Start() {
 	router.Handle("/v0/admin/system/health", adminRoute(adminhandlers.ExtendedHealthHandler)).Methods("GET")
 	router.Handle("/v0/admin/economics", adminRoute(adminhandlers.GetEconomicsHandler)).Methods("GET")
 	router.Handle("/v0/admin/economics", adminRoute(adminhandlers.UpdateEconomicsHandler)).Methods("PUT")
+
+	// Challenge System Routes
+	// Public - tier listing
+	router.HandleFunc("/v0/challenges/tiers", challengeshandlers.ListTiersHandler).Methods("GET")
+	router.HandleFunc("/v0/challenges/tiers/{slug}", challengeshandlers.GetTierHandler).Methods("GET")
+
+	// Protected - user challenge operations
+	router.Handle("/v0/challenges/start", protectedRoute(challengeshandlers.StartChallengeHandler)).Methods("POST")
+	router.Handle("/v0/challenges/active", protectedRoute(challengeshandlers.GetActiveChallengeHandler)).Methods("GET")
+	router.Handle("/v0/challenges/history", protectedRoute(challengeshandlers.GetChallengeHistoryHandler)).Methods("GET")
+	router.Handle("/v0/challenges/{id}", protectedRoute(challengeshandlers.GetChallengeDetailHandler)).Methods("GET")
+	router.Handle("/v0/challenges/{id}/record-day", protectedRoute(challengeshandlers.RecordDayHandler)).Methods("POST")
+	router.Handle("/v0/challenges/{id}/retry", protectedRoute(challengeshandlers.RetryChallengeHandler)).Methods("POST")
+
+	// Admin - challenge management
+	router.Handle("/v0/challenges/evaluate-daily", adminRoute(challengeshandlers.EvaluateDailyHandler)).Methods("POST")
+	router.Handle("/v0/admin/challenges", adminRoute(challengeshandlers.AdminListChallengesHandler)).Methods("GET")
+	router.Handle("/v0/admin/challenges/stats", adminRoute(challengeshandlers.AdminChallengeStatsHandler)).Methods("GET")
+	router.Handle("/v0/admin/challenges/tiers/{id}", adminRoute(challengeshandlers.AdminUpdateTierHandler)).Methods("PUT")
 
 	// Apply body size limit (outermost layer — before CORS and routing)
 	// Apply CORS middleware if enabled

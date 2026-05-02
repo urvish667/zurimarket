@@ -37,6 +37,7 @@ func main() {
 	log.Println("Migrations completed.")
 
 	seed.SeedUsers(db)
+	seed.SeedChallengeTiers(db)
 	if err := seed.SeedHomepage(db, "."); err != nil {
 		log.Printf("seed homepage: warning: %v", err)
 	}

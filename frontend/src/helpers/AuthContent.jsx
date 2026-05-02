@@ -21,6 +21,7 @@ const AuthProvider = ({ children }) => {
         token: localStorage.getItem('token'),
         username: localStorage.getItem('username'),
         usertype: localStorage.getItem('usertype'),
+        challengeBadge: localStorage.getItem('challengeBadge') || 'none',
         changePasswordNeeded: null  // Initialized as null
     });
 
@@ -39,6 +40,7 @@ const AuthProvider = ({ children }) => {
                 token: token,
                 username: localStorage.getItem('username'),
                 usertype: localStorage.getItem('usertype'),
+                challengeBadge: localStorage.getItem('challengeBadge') || 'none',
                 // assume password change needed until shown not
                 changePasswordNeeded: localStorage.getItem('changePasswordNeeded') === 'true',
             }));
@@ -71,12 +73,14 @@ const AuthProvider = ({ children }) => {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('username', data.username);
                 localStorage.setItem('usertype', data.usertype);
+                localStorage.setItem('challengeBadge', data.challengeBadge || 'none');
                 localStorage.setItem('changePasswordNeeded', data.mustChangePassword);
                 setAuthState({
                     isLoggedIn: true,
                     token: data.token,
                     username: data.username,
                     usertype: data.usertype,
+                    challengeBadge: data.challengeBadge || 'none',
                     changePasswordNeeded: data.mustChangePassword,
                 });
                 return true;
@@ -99,6 +103,7 @@ const AuthProvider = ({ children }) => {
             token: null,
             username: null,
             usertype: null,
+            challengeBadge: 'none',
             changePasswordNeeded: null,
         });
     };

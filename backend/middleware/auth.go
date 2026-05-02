@@ -156,6 +156,16 @@ func AuthenticatedUserFromContext(r *http.Request) *models.User {
 	return user
 }
 
+// GetUsernameFromJWT extracts the username from the authenticated user in request context.
+// The user must have been set by RequireVerifiedUser or RequireAdminUser middleware.
+func GetUsernameFromJWT(r *http.Request) (string, error) {
+	user := AuthenticatedUserFromContext(r)
+	if user == nil {
+		return "", &HTTPError{StatusCode: http.StatusUnauthorized, Message: "no authenticated user in context"}
+	}
+	return user.Username, nil
+}
+
 func isPasswordChangeAllowedPath(path string) bool {
 	return path == "/v0/changepassword" || path == "/v0/logout"
 }

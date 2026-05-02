@@ -19,7 +19,8 @@ import Style from '../pages/style/Style';
 import NotFound from '../pages/notfound/NotFound';
 import LoginForm from '../pages/auth/LoginForm';
 import SignupFlow from '../pages/auth/SignupFlow';
-import ChallengesPage from '../pages/home/ChallengesPage';
+import ChallengesHub from '../pages/challenges/ChallengesHub';
+import ChallengeDetail from '../pages/challenges/ChallengeDetail';
 
 const AppRoutes = () => {
   const auth = useAuth();
@@ -53,7 +54,16 @@ const AppRoutes = () => {
         {isLoggedIn && mustChangePassword ? (
           <Redirect to='/changepassword' />
         ) : (
-          <ChallengesPage />
+          <ChallengesHub />
+        )}
+      </Route>
+      <Route exact path='/challenges/:id'>
+        {isLoggedIn && mustChangePassword ? (
+          <Redirect to='/changepassword' />
+        ) : isLoggedIn ? (
+          <ChallengeDetail />
+        ) : (
+          <Redirect to='/login' />
         )}
       </Route>
       <Route exact path='/polls'>
